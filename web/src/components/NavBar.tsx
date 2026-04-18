@@ -1,7 +1,7 @@
 import { createLink, useRouterState } from '@tanstack/react-router'
 import React from 'react'
 import { twMerge } from 'tailwind-merge'
-import { Upload, PencilLine, ListOrdered } from 'lucide-react'
+import { Upload, ListOrdered } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { ModeToggle } from '@/components/mode-toggle'
 
@@ -11,9 +11,8 @@ const MotionAnchor = React.forwardRef<HTMLAnchorElement, React.ComponentProps<ty
 const MotionLink = createLink(MotionAnchor)
 
 const menuItems = [
-  { label: 'Page 1', href: '/page-1', icon: ListOrdered },
-  { label: 'Page 2', href: '/page-2', icon: Upload },
-  { label: 'Page 3', href: '/page-3', icon: PencilLine },
+  { label: 'Table Registry', href: '/table-registry', icon: ListOrdered },
+  { label: 'Drag & Drop File', href: '/drag-drop', icon: Upload },
 ]
 
 export default function NavBar() {
