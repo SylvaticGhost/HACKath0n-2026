@@ -94,18 +94,18 @@ export function RegistryPage({ scope, entity }: RegistryPageProps) {
 
   return (
     <TooltipProvider delayDuration={200}>
-      <div className="mx-auto flex h-full w-full max-w-310 flex-col gap-4">
-        <section className="overflow-hidden rounded-2xl border bg-card shadow-sm">
-          <div className="border-b bg-muted/20 px-4 py-3 sm:px-6">
+      <div className="mx-auto flex w-full max-w-310 flex-col gap-4">
+        <section className="flex flex-col gap-4">
+          <div className="px-2 py-2">
             <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-              <div className="inline-flex w-fit items-center rounded-lg bg-muted p-1">
+              <div className="inline-flex w-fit items-center rounded-lg bg-transparent p-0 gap-1">
                 <Link
                   to={landRoute}
                   className={cn(
                     'inline-flex h-8 items-center gap-1.5 rounded-md px-3 text-xs font-semibold transition-colors',
                     isLand
-                      ? 'bg-primary text-primary-foreground shadow-sm'
-                      : 'text-muted-foreground hover:bg-background hover:text-foreground',
+                      ? 'bg-muted text-foreground'
+                      : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground',
                   )}
                 >
                   <MapPinned className="size-3.5" />
@@ -116,8 +116,8 @@ export function RegistryPage({ scope, entity }: RegistryPageProps) {
                   className={cn(
                     'inline-flex h-8 items-center gap-1.5 rounded-md px-3 text-xs font-semibold transition-colors',
                     !isLand
-                      ? 'bg-primary text-primary-foreground shadow-sm'
-                      : 'text-muted-foreground hover:bg-background hover:text-foreground',
+                      ? 'bg-muted text-foreground'
+                      : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground',
                   )}
                 >
                   <Building2 className="size-3.5" />
@@ -125,14 +125,14 @@ export function RegistryPage({ scope, entity }: RegistryPageProps) {
                 </Link>
               </div>
 
-              <div className="relative min-w-0 md:w-80">
+              <div className="relative min-w-0 md:w-60">
                 <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   value={locationInput}
                   onChange={(event) => setLocationInput(event.target.value)}
                   list={datalistId}
-                  placeholder={isLand ? 'Search by location...' : 'Search by object address...'}
-                  className="h-9 pl-9"
+                  placeholder={isLand ? 'Search location' : 'Search address'}
+                  className="h-8 pl-9 bg-transparent border-0 shadow-none ring-1 ring-border/30 rounded-md text-xs focus-visible:ring-border/60 focus-visible:ring-offset-0"
                 />
                 <datalist id={datalistId}>
                   {locationSuggestions.map((value) => (
@@ -143,13 +143,13 @@ export function RegistryPage({ scope, entity }: RegistryPageProps) {
             </div>
           </div>
 
-          <div className="space-y-4 p-4 sm:p-6">
-            <div className="space-y-1">
-              <h1 className="text-2xl font-semibold tracking-tight">
-                {entity} ({totalItems})
+          <div className="space-y-3 px-2">
+            <div className="flex items-baseline justify-between">
+              <h1 className="text-xl font-bold tracking-tight">
+                {entity} <span className="font-normal text-muted-foreground text-sm ml-1">{totalItems} results</span>
               </h1>
-              <div className="text-sm text-muted-foreground">
-                Invalid total: <span className="font-semibold text-destructive">{invalidCountQuery.data ?? 0}</span>
+              <div className="text-xs text-muted-foreground mr-1">
+                Errors: <span className="font-medium text-destructive">{invalidCountQuery.data ?? 0}</span>
               </div>
             </div>
 
@@ -185,7 +185,7 @@ export function RegistryPage({ scope, entity }: RegistryPageProps) {
 
         <div className="flex flex-col gap-3 px-1 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-sm text-muted-foreground">Show Results :</span>
+            <span className="text-xs text-muted-foreground mr-2">Rows:</span>
             <Select
               value={String(pageSize)}
               onValueChange={(value) => {
@@ -193,7 +193,10 @@ export function RegistryPage({ scope, entity }: RegistryPageProps) {
                 setPage(1)
               }}
             >
-              <SelectTrigger size="sm" className="h-8 min-w-20">
+              <SelectTrigger
+                size="sm"
+                className="h-7 w-auto min-w-[3.5rem] border-0 shadow-none ring-1 ring-border/20 focus:ring-border/50 text-xs"
+              >
                 <SelectValue placeholder="15" />
               </SelectTrigger>
               <SelectContent>
@@ -209,9 +212,9 @@ export function RegistryPage({ scope, entity }: RegistryPageProps) {
             </span>
           </div>
 
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-0.5">
             <Button
-              variant="outline"
+              variant="ghost"
               size="icon"
               className="size-8"
               onClick={() => setPage((currentPage) => Math.max(1, currentPage - 1))}
@@ -225,7 +228,7 @@ export function RegistryPage({ scope, entity }: RegistryPageProps) {
               <Button
                 key={pageNumber}
                 size="sm"
-                variant={pageNumber === page ? 'default' : 'outline'}
+                variant={pageNumber === page ? 'secondary' : 'ghost'}
                 className={cn('h-8 min-w-8 px-2', pageNumber === page && 'pointer-events-none')}
                 onClick={() => setPage(pageNumber)}
               >
@@ -234,7 +237,7 @@ export function RegistryPage({ scope, entity }: RegistryPageProps) {
             ))}
 
             <Button
-              variant="outline"
+              variant="ghost"
               size="icon"
               className="size-8"
               onClick={() => setPage((currentPage) => Math.min(totalPages, currentPage + 1))}
