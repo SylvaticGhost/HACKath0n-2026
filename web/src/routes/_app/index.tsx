@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { createFileRoute } from '@tanstack/react-router'
 import {
   AreaChart,
@@ -18,10 +19,12 @@ import {
   Building2,
   CheckCircle2,
   FileText,
+  Layers,
   Loader2,
   MapPinned,
   ShieldAlert,
   TrendingUp,
+  Users,
 } from 'lucide-react'
 import { useAnalytics } from '@/hooks/use-analytics'
 import { cn } from '@/lib/utils'
@@ -44,19 +47,19 @@ const DIFF_STATUS_COLORS: Record<string, string> = {
 function formatNumber(n: number) {
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`
   if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`
-  return n.toLocaleString('uk-UA')
+  return n.toLocaleString('en-US')
 }
 
 function formatArea(ha: number) {
-  if (ha >= 1_000_000) return `${(ha / 1_000_000).toFixed(2)}M га`
-  if (ha >= 1_000) return `${(ha / 1_000).toFixed(1)}K га`
-  return `${ha.toFixed(1)} га`
+  if (ha >= 1_000_000) return `${(ha / 1_000_000).toFixed(2)}M ha`
+  if (ha >= 1_000) return `${(ha / 1_000).toFixed(1)}K ha`
+  return `${ha.toFixed(1)} ha`
 }
 
 function formatValue(uah: number) {
-  if (uah >= 1_000_000_000) return `${(uah / 1_000_000_000).toFixed(1)} млрд ₴`
-  if (uah >= 1_000_000) return `${(uah / 1_000_000).toFixed(1)} млн ₴`
-  if (uah >= 1_000) return `${(uah / 1_000).toFixed(0)} тис ₴`
+  if (uah >= 1_000_000_000) return `${(uah / 1_000_000_000).toFixed(1)}B ₴`
+  if (uah >= 1_000_000) return `${(uah / 1_000_000).toFixed(1)}M ₴`
+  if (uah >= 1_000) return `${(uah / 1_000).toFixed(0)}K ₴`
   return `${uah.toFixed(0)} ₴`
 }
 
@@ -175,22 +178,22 @@ function IntegrityRing({ score }: { score: number }) {
       <div className="space-y-1.5 text-sm">
         <div className="flex items-center gap-2">
           <CheckCircle2 className="size-4 text-green-500" />
-          <span className="text-muted-foreground">Збіги в реєстрах</span>
+          <span className="text-muted-foreground">Matching records</span>
         </div>
         <div className="flex items-center gap-2">
           <AlertTriangle className="size-4 text-amber-500" />
-          <span className="text-muted-foreground">Розбіжності даних</span>
+          <span className="text-muted-foreground">Data mismatches</span>
         </div>
         <div className="flex items-center gap-2">
           <ShieldAlert className="size-4 text-red-500" />
-          <span className="text-muted-foreground">Відсутні в одному реєстрі</span>
+          <span className="text-muted-foreground">Missing in one registry</span>
         </div>
         <p className="text-xs text-muted-foreground pt-1">
           {score >= 80
-            ? 'Реєстр у доброму стані'
+            ? 'Registry is in good shape'
             : score >= 50
-              ? 'Виявлено помірні розбіжності'
-              : 'Знайдено серйозні невідповідності'}
+              ? 'Moderate discrepancies detected'
+              : 'Serious inconsistencies found'}
         </p>
       </div>
     </div>
@@ -221,20 +224,23 @@ function LoadingSkeleton() {
   return (
     <div className="flex flex-col items-center justify-center gap-3 py-20">
       <Loader2 className="size-8 animate-spin text-muted-foreground" />
-      <p className="text-sm text-muted-foreground">Завантаження аналітики...</p>
+      <p className="text-sm text-muted-foreground">Loading analytics...</p>
     </div>
   )
 }
 
+type Tab = 'land' | 'realty'
+
 function DashboardPage() {
   const { data, isLoading, error } = useAnalytics()
+  const [tab, setTab] = useState<Tab>('land')
 
   if (isLoading) return <LoadingSkeleton />
   if (error || !data) {
     return (
       <div className="flex flex-col items-center justify-center gap-2 py-20">
         <ShieldAlert className="size-8 text-red-500" />
-        <p className="text-sm text-muted-foreground">Не вдалося завантажити аналітику</p>
+        <p className="text-sm text-muted-foreground">Failed to load analytics</p>
       </div>
     )
   }
@@ -244,15 +250,15 @@ function DashboardPage() {
   const totalRecords = overview.totalLandRecords + overview.totalRealtyRecords
   const integrityAccent = overview.integrityScore >= 80 ? 'green' : overview.integrityScore >= 50 ? 'amber' : 'red'
 
-  const purposeLabels: Record<string, string> = {
-    OWNERSHIP: 'Власність',
-    LEASE: 'Оренда',
-    USAGE: 'Користування',
+  const ownershipLabels: Record<string, string> = {
+    OWNERSHIP: 'Ownership',
+    LEASE: 'Lease',
+    USAGE: 'Usage',
   }
 
   const landOwnershipData = land.ownershipTypes.map((t) => ({
     ...t,
-    type: purposeLabels[t.type] ?? t.type,
+    type: ownershipLabels[t.type] ?? t.type,
   }))
 
   const realtyObjectData = realty.objectTypes.map((t) => ({ ...t, label: t.type }))
@@ -270,11 +276,11 @@ function DashboardPage() {
 
   const avgSimilarity =
     diffs.land.avgSimilarity !== null && diffs.realty.avgSimilarity !== null
-      ? Math.round(((diffs.land.avgSimilarity + diffs.realty.avgSimilarity) / 2) * 100)
+      ? Math.round((diffs.land.avgSimilarity + diffs.realty.avgSimilarity) / 2)
       : diffs.land.avgSimilarity !== null
-        ? Math.round(diffs.land.avgSimilarity * 100)
+        ? Math.round(diffs.land.avgSimilarity)
         : diffs.realty.avgSimilarity !== null
-          ? Math.round(diffs.realty.avgSimilarity * 100)
+          ? Math.round(diffs.realty.avgSimilarity)
           : null
 
   return (
@@ -282,215 +288,440 @@ function DashboardPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold tracking-tight">Аналітика реєстру</h1>
-          <p className="text-sm text-muted-foreground">Огляд стану земельного та майнового реєстру ОТГ</p>
+          <h1 className="text-xl font-bold tracking-tight">Registry Analytics</h1>
+          <p className="text-sm text-muted-foreground">Overview of land and property registry status</p>
         </div>
         <div className="flex items-center gap-2 rounded-lg border bg-muted/40 px-3 py-1.5 text-xs text-muted-foreground">
           <TrendingUp className="size-3.5" />
-          Дані в реальному часі
+          Live data
         </div>
       </div>
 
-      {/* KPI Cards */}
+      {/* Overview KPI Cards */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <KpiCard
-          label="Всього записів"
+          label="Total records"
           value={formatNumber(totalRecords)}
-          sub={`${formatNumber(overview.totalLandRecords)} земля · ${formatNumber(overview.totalRealtyRecords)} нерухомість`}
+          sub={`${formatNumber(overview.totalLandRecords)} land · ${formatNumber(overview.totalRealtyRecords)} realty`}
           icon={<FileText className="size-5" />}
         />
         <KpiCard
-          label="Цілісність реєстру"
+          label="Registry integrity"
           value={`${overview.integrityScore}%`}
-          sub={overview.totalIssues > 0 ? `${overview.totalIssues} розбіжностей` : 'Всі записи збігаються'}
+          sub={overview.totalIssues > 0 ? `${overview.totalIssues} discrepancies` : 'All records match'}
           icon={<CheckCircle2 className="size-5" />}
           accent={integrityAccent}
         />
         <KpiCard
-          label="Площа землі"
+          label="Total land area"
           value={formatArea(overview.totalLandArea)}
-          sub="Сумарна площа ділянок"
+          sub="Combined area of all parcels"
           icon={<MapPinned className="size-5" />}
         />
         <KpiCard
-          label="Оціночна вартість"
+          label="Estimated value"
           value={formatValue(overview.totalEstimatedValue)}
-          sub="Сума оціночних вартостей"
+          sub="Sum of assessed values"
           icon={<Building2 className="size-5" />}
           accent={overview.totalEstimatedValue > 0 ? 'default' : 'amber'}
         />
       </div>
 
-      {/* Row 2: Integrity + Diff + Realty types */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <ChartCard title="Стан цілісності реєстру" className="lg:col-span-1">
+      {/* Integrity + Diff — always visible */}
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <ChartCard title="Registry integrity status">
           <IntegrityRing score={overview.integrityScore} />
         </ChartCard>
 
-        <ChartCard title="Розбіжності за типом" className="lg:col-span-1">
+        <ChartCard title="Discrepancies by type">
           {mergedDiffByStatus.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Немає даних</p>
+            <p className="text-sm text-muted-foreground">No data</p>
           ) : (
             <DiffStatusLegend items={mergedDiffByStatus} />
           )}
           <div className="mt-4 grid grid-cols-2 gap-3 border-t pt-4">
             <div className="text-center">
               <p className="text-lg font-bold">{diffs.land.issues + diffs.realty.issues}</p>
-              <p className="text-xs text-muted-foreground">Всього проблем</p>
+              <p className="text-xs text-muted-foreground">Total issues</p>
             </div>
             <div className="text-center">
               <p className="text-lg font-bold">{avgSimilarity !== null ? `${avgSimilarity}%` : '—'}</p>
-              <p className="text-xs text-muted-foreground">Схожість записів</p>
+              <p className="text-xs text-muted-foreground">Record similarity</p>
             </div>
           </div>
         </ChartCard>
-
-        <ChartCard title="Нерухомість за типом" className="lg:col-span-1">
-          {realtyObjectData.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Немає даних</p>
-          ) : (
-            <ResponsiveContainer width="100%" height={180}>
-              <BarChart data={realtyObjectData} barSize={28}>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
-                <XAxis
-                  dataKey="label"
-                  tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
-                  axisLine={false}
-                  tickLine={false}
-                />
-                <YAxis
-                  tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
-                  axisLine={false}
-                  tickLine={false}
-                  width={30}
-                />
-                <Tooltip content={<CustomTooltip />} />
-                <Bar dataKey="count" name="Кількість" radius={[4, 4, 0, 0]}>
-                  {realtyObjectData.map((_, i) => (
-                    <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          )}
-        </ChartCard>
       </div>
 
-      {/* Row 3: Year trend + Ownership pie */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <ChartCard title="Реєстрація ділянок по роках" className="lg:col-span-2">
-          {land.byYear.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Немає даних</p>
-          ) : (
-            <ResponsiveContainer width="100%" height={200}>
-              <AreaChart data={land.byYear}>
-                <defs>
-                  <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.25} />
-                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
-                <XAxis
-                  dataKey="year"
-                  tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
-                  axisLine={false}
-                  tickLine={false}
-                />
-                <YAxis
-                  tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
-                  axisLine={false}
-                  tickLine={false}
-                  width={35}
-                />
-                <Tooltip content={<CustomTooltip />} />
-                <Area
-                  type="monotone"
-                  dataKey="count"
-                  name="Ділянок"
-                  stroke="#3b82f6"
-                  strokeWidth={2}
-                  fill="url(#areaGrad)"
-                  dot={{ r: 3, fill: '#3b82f6', strokeWidth: 0 }}
-                  activeDot={{ r: 5 }}
-                />
-              </AreaChart>
-            </ResponsiveContainer>
+      {/* Tab switcher */}
+      <div className="flex items-center gap-1 rounded-xl border bg-muted/40 p-1 w-fit">
+        <button
+          onClick={() => setTab('land')}
+          className={cn(
+            'flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors',
+            tab === 'land' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground',
           )}
-        </ChartCard>
+        >
+          <MapPinned className="size-4" />
+          Land
+        </button>
+        <button
+          onClick={() => setTab('realty')}
+          className={cn(
+            'flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors',
+            tab === 'realty'
+              ? 'bg-background text-foreground shadow-sm'
+              : 'text-muted-foreground hover:text-foreground',
+          )}
+        >
+          <Building2 className="size-4" />
+          Realty
+        </button>
+      </div>
 
-        <ChartCard title="Тип права на землю" className="lg:col-span-1">
-          {landOwnershipData.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Немає даних</p>
-          ) : (
-            <>
-              <ResponsiveContainer width="100%" height={150}>
-                <PieChart>
-                  <Pie
-                    data={landOwnershipData}
-                    dataKey="count"
-                    nameKey="type"
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={40}
-                    outerRadius={68}
-                    paddingAngle={3}
-                    strokeWidth={0}
-                  >
-                    {landOwnershipData.map((_, i) => (
+      {/* Land tab */}
+      {tab === 'land' && (
+        <div className="space-y-4">
+          {/* Land KPI */}
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <KpiCard
+              label="Land records"
+              value={formatNumber(overview.totalLandRecords)}
+              sub="Total number of parcels"
+              icon={<MapPinned className="size-5" />}
+            />
+            <KpiCard
+              label="Avg. parcel area"
+              value={formatArea(land.avgArea)}
+              sub="Mean value across registry"
+              icon={<Layers className="size-5" />}
+            />
+            <KpiCard
+              label="Unique owners"
+              value={formatNumber(land.uniqueOwners)}
+              sub="By taxpayer ID"
+              icon={<Users className="size-5" />}
+            />
+            <KpiCard
+              label="Value per hectare"
+              value={
+                overview.totalLandArea > 0 ? formatValue(overview.totalEstimatedValue / overview.totalLandArea) : '—'
+              }
+              sub="Avg. assessed value"
+              icon={<Building2 className="size-5" />}
+              accent={overview.totalEstimatedValue > 0 ? 'default' : 'amber'}
+            />
+          </div>
+
+          {/* Registration trend + Ownership types */}
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+            <ChartCard title="Parcel registrations by year" className="lg:col-span-2">
+              {land.byYear.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No data</p>
+              ) : (
+                <ResponsiveContainer width="100%" height={200}>
+                  <AreaChart data={land.byYear}>
+                    <defs>
+                      <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.25} />
+                        <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+                    <XAxis
+                      dataKey="year"
+                      tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
+                      axisLine={false}
+                      tickLine={false}
+                    />
+                    <YAxis
+                      tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
+                      axisLine={false}
+                      tickLine={false}
+                      width={35}
+                    />
+                    <Tooltip content={<CustomTooltip />} />
+                    <Area
+                      type="monotone"
+                      dataKey="count"
+                      name="Parcels"
+                      stroke="#3b82f6"
+                      strokeWidth={2}
+                      fill="url(#areaGrad)"
+                      dot={{ r: 3, fill: '#3b82f6', strokeWidth: 0 }}
+                      activeDot={{ r: 5 }}
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              )}
+            </ChartCard>
+
+            <ChartCard title="Land ownership type" className="lg:col-span-1">
+              {landOwnershipData.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No data</p>
+              ) : (
+                <>
+                  <ResponsiveContainer width="100%" height={150}>
+                    <PieChart>
+                      <Pie
+                        data={landOwnershipData}
+                        dataKey="count"
+                        nameKey="type"
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={40}
+                        outerRadius={68}
+                        paddingAngle={3}
+                        strokeWidth={0}
+                      >
+                        {landOwnershipData.map((_, i) => (
+                          <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip content={<CustomPieTooltip />} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                  <div className="mt-2 space-y-1.5">
+                    {landOwnershipData.map((item, i) => {
+                      const total = landOwnershipData.reduce((a, b) => a + b.count, 0)
+                      const pct = total > 0 ? Math.round((item.count / total) * 100) : 0
+                      return (
+                        <div key={item.type} className="flex items-center gap-2 text-xs">
+                          <span
+                            className="size-2.5 rounded-sm shrink-0"
+                            style={{ background: PIE_COLORS[i % PIE_COLORS.length] }}
+                          />
+                          <span className="text-muted-foreground flex-1 truncate">{item.type}</span>
+                          <span className="font-medium tabular-nums">{pct}%</span>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </>
+              )}
+            </ChartCard>
+          </div>
+
+          {/* Purpose types */}
+          {land.purposeTypes.length > 0 && (
+            <ChartCard title="Land purpose type (top 8)">
+              <div className="space-y-2.5">
+                {(() => {
+                  const max = Math.max(...land.purposeTypes.map((t) => t.count))
+                  return land.purposeTypes.map((item, i) => (
+                    <div key={item.type} className="flex flex-col gap-1">
+                      <div className="flex items-center justify-between gap-2 text-xs">
+                        <span className="text-muted-foreground leading-snug">{item.type}</span>
+                        <span className="font-medium tabular-nums shrink-0">{formatNumber(item.count)}</span>
+                      </div>
+                      <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
+                        <div
+                          className="h-full rounded-full transition-all"
+                          style={{
+                            width: `${(item.count / max) * 100}%`,
+                            background: PIE_COLORS[i % PIE_COLORS.length],
+                          }}
+                        />
+                      </div>
+                    </div>
+                  ))
+                })()}
+              </div>
+            </ChartCard>
+          )}
+
+          {/* Area distribution + Top registrars */}
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+            <ChartCard title="Parcel area distribution">
+              {land.areaDistribution.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No data</p>
+              ) : (
+                <ResponsiveContainer width="100%" height={200}>
+                  <BarChart data={land.areaDistribution} barSize={36}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+                    <XAxis
+                      dataKey="range"
+                      tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
+                      axisLine={false}
+                      tickLine={false}
+                    />
+                    <YAxis
+                      tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
+                      axisLine={false}
+                      tickLine={false}
+                      width={35}
+                    />
+                    <Tooltip content={<CustomTooltip />} />
+                    <Bar dataKey="count" name="Parcels" radius={[4, 4, 0, 0]}>
+                      {land.areaDistribution.map((_, i) => (
+                        <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
+            </ChartCard>
+
+            <ChartCard title="Top 5 registrars">
+              {land.topRegistrators.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No data</p>
+              ) : (
+                <ResponsiveContainer width="100%" height={200}>
+                  <BarChart data={land.topRegistrators} layout="vertical" barSize={18}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" horizontal={false} />
+                    <XAxis
+                      type="number"
+                      tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
+                      axisLine={false}
+                      tickLine={false}
+                    />
+                    <YAxis
+                      type="category"
+                      dataKey="name"
+                      tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
+                      axisLine={false}
+                      tickLine={false}
+                      width={160}
+                      tickFormatter={(v: string) => (v.length > 26 ? v.slice(0, 26) + '…' : v)}
+                    />
+                    <Tooltip content={<CustomTooltip />} />
+                    <Bar dataKey="count" name="Parcels" radius={[0, 4, 4, 0]} fill="#06b6d4" />
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
+            </ChartCard>
+          </div>
+        </div>
+      )}
+
+      {/* Realty tab */}
+      {tab === 'realty' && (
+        <div className="space-y-4">
+          {/* Realty KPI */}
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+            <KpiCard
+              label="Realty records"
+              value={formatNumber(overview.totalRealtyRecords)}
+              sub="Total number of objects"
+              icon={<Building2 className="size-5" />}
+            />
+            <KpiCard
+              label="Total area"
+              value={`${formatNumber(Math.round(overview.totalRealtyArea))} m²`}
+              sub="Combined area of all objects"
+              icon={<Layers className="size-5" />}
+            />
+            <KpiCard
+              label="Avg. object area"
+              value={
+                overview.totalRealtyRecords > 0
+                  ? `${(overview.totalRealtyArea / overview.totalRealtyRecords).toFixed(1)} m²`
+                  : '—'
+              }
+              sub="Mean value across registry"
+              icon={<FileText className="size-5" />}
+            />
+          </div>
+
+          {/* Realty by object type */}
+          <ChartCard title="Realty by object type">
+            {realtyObjectData.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No data</p>
+            ) : (
+              <ResponsiveContainer width="100%" height={240}>
+                <BarChart data={realtyObjectData} barSize={32}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+                  <XAxis
+                    dataKey="label"
+                    tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
+                    axisLine={false}
+                    tickLine={false}
+                    tickFormatter={(v: string) => (v.length > 14 ? v.slice(0, 14) + '…' : v)}
+                  />
+                  <YAxis
+                    tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
+                    axisLine={false}
+                    tickLine={false}
+                    width={35}
+                  />
+                  <Tooltip content={<CustomTooltip />} />
+                  <Bar dataKey="count" name="Count" radius={[4, 4, 0, 0]}>
+                    {realtyObjectData.map((_, i) => (
                       <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
                     ))}
-                  </Pie>
-                  <Tooltip content={<CustomPieTooltip />} />
-                </PieChart>
+                  </Bar>
+                </BarChart>
               </ResponsiveContainer>
-              <div className="mt-2 space-y-1.5">
-                {landOwnershipData.map((item, i) => {
-                  const total = landOwnershipData.reduce((a, b) => a + b.count, 0)
-                  const pct = total > 0 ? Math.round((item.count / total) * 100) : 0
-                  return (
-                    <div key={item.type} className="flex items-center gap-2 text-xs">
-                      <span
-                        className="size-2.5 rounded-sm shrink-0"
-                        style={{ background: PIE_COLORS[i % PIE_COLORS.length] }}
-                      />
-                      <span className="text-muted-foreground flex-1 truncate">{item.type}</span>
-                      <span className="font-medium tabular-nums">{pct}%</span>
-                    </div>
-                  )
-                })}
-              </div>
-            </>
-          )}
-        </ChartCard>
-      </div>
+            )}
+          </ChartCard>
 
-      {/* Row 4: Land purpose types */}
-      {land.purposeTypes.length > 0 && (
-        <ChartCard title="Цільове призначення землі (топ 8)">
-          <ResponsiveContainer width="100%" height={180}>
-            <BarChart data={land.purposeTypes} layout="vertical" barSize={14}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" horizontal={false} />
-              <XAxis
-                type="number"
-                tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
-                axisLine={false}
-                tickLine={false}
-              />
-              <YAxis
-                type="category"
-                dataKey="type"
-                tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
-                axisLine={false}
-                tickLine={false}
-                width={170}
-                tickFormatter={(v: string) => (v.length > 28 ? v.slice(0, 28) + '…' : v)}
-              />
-              <Tooltip content={<CustomTooltip />} />
-              <Bar dataKey="count" name="Ділянок" radius={[0, 4, 4, 0]} fill="#a855f7" />
-            </BarChart>
-          </ResponsiveContainer>
-        </ChartCard>
+          {/* Realty diff stats */}
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+            <ChartCard title="Realty discrepancies">
+              {diffs.realty.byStatus.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No data</p>
+              ) : (
+                <DiffStatusLegend items={[...diffs.realty.byStatus].sort((a, b) => b.count - a.count)} />
+              )}
+              <div className="mt-4 grid grid-cols-2 gap-3 border-t pt-4">
+                <div className="text-center">
+                  <p className="text-lg font-bold">{diffs.realty.issues}</p>
+                  <p className="text-xs text-muted-foreground">Problematic records</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-lg font-bold">
+                    {diffs.realty.avgSimilarity !== null ? `${Math.round(diffs.realty.avgSimilarity)}%` : '—'}
+                  </p>
+                  <p className="text-xs text-muted-foreground">Record similarity</p>
+                </div>
+              </div>
+            </ChartCard>
+
+            <ChartCard title="Realty breakdown by type">
+              {realtyObjectData.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No data</p>
+              ) : (
+                <>
+                  <ResponsiveContainer width="100%" height={150}>
+                    <PieChart>
+                      <Pie
+                        data={realtyObjectData}
+                        dataKey="count"
+                        nameKey="label"
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={40}
+                        outerRadius={68}
+                        paddingAngle={3}
+                        strokeWidth={0}
+                      >
+                        {realtyObjectData.map((_, i) => (
+                          <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip content={<CustomPieTooltip />} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                  <div className="mt-2 space-y-1.5">
+                    {realtyObjectData.map((item, i) => {
+                      const total = realtyObjectData.reduce((a, b) => a + b.count, 0)
+                      const pct = total > 0 ? Math.round((item.count / total) * 100) : 0
+                      return (
+                        <div key={item.label} className="flex items-center gap-2 text-xs">
+                          <span
+                            className="size-2.5 rounded-sm shrink-0"
+                            style={{ background: PIE_COLORS[i % PIE_COLORS.length] }}
+                          />
+                          <span className="text-muted-foreground flex-1 truncate">{item.label}</span>
+                          <span className="font-medium tabular-nums">{pct}%</span>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </>
+              )}
+            </ChartCard>
+          </div>
+        </div>
       )}
     </div>
   )

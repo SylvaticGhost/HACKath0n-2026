@@ -15,6 +15,10 @@ export interface AnalyticsData {
     ownershipTypes: { type: string; count: number }[]
     purposeTypes: { type: string; count: number }[]
     byYear: { year: number; count: number }[]
+    avgArea: number
+    uniqueOwners: number
+    areaDistribution: { range: string; count: number }[]
+    topRegistrators: { name: string; count: number }[]
   }
   realty: {
     objectTypes: { type: string; count: number }[]

@@ -11,6 +11,7 @@ import { CrmModule } from './modules/crm/crm.module'
 import { RegistryModule } from './modules/registry/registry.module'
 import { DiffModule } from './diff/diff.module'
 import { UploadModule } from './modules/upload/upload.module'
+import { AnalyticsModule } from './modules/analytics/analytics.module'
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { UploadModule } from './modules/upload/upload.module'
     RegistryModule,
     DiffModule,
     UploadModule,
+    AnalyticsModule,
   ],
   providers: [
     {
