@@ -14,6 +14,9 @@ export class CrmService {
   ) {}
 
   async clearData(): Promise<void> {
-    await Promise.all([this.realtyCrmRepository.clear(), this.landCrmRepository.clear()])
+    await this.realtyCrmRepository.manager.transaction(async (entityManager) => {
+      await entityManager.getRepository(RealtyCrm).clear()
+      await entityManager.getRepository(LandCrm).clear()
+    })
   }
 }
