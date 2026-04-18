@@ -1,4 +1,5 @@
 import { ViewColumn, ViewEntity } from 'typeorm'
+import { numericTransformer } from '../../../utils/numeric-transformer'
 
 @ViewEntity({ name: 'v_land_tax', schema: 'crm', synchronize: false })
 export class LandTaxView {
@@ -23,22 +24,13 @@ export class LandTaxView {
   @ViewColumn({ name: 'ownership_type' })
   ownershipType: string
 
-  @ViewColumn({ name: 'square' })
+  @ViewColumn({ name: 'square', transformer: numericTransformer })
   square: number
 
-  @ViewColumn({ name: 'ngo_uah' })
-  ngoUah: number
-
-  @ViewColumn({ name: 'indexation_coefficient' })
-  indexationCoefficient: number
-
-  @ViewColumn({ name: 'tax_rate' })
-  taxRate: number
-
-  @ViewColumn({ name: 'owner_part' })
+  @ViewColumn({ name: 'owner_part', transformer: numericTransformer })
   ownerPart: number
 
-  @ViewColumn({ name: 'annual_tax_uah' })
+  @ViewColumn({ name: 'annual_tax_uah', transformer: numericTransformer })
   annualTaxUah: number | null
 
   @ViewColumn({ name: 'validation_status' })
