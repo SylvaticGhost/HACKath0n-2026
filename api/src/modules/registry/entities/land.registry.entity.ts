@@ -2,7 +2,10 @@ import { Column, Entity, PrimaryColumn } from 'typeorm'
 
 @Entity({ name: 'land', schema: 'registry' })
 export class LandRegistry {
-  @PrimaryColumn({ name: 'cadastral_number', type: 'varchar', length: 22 })
+  @PrimaryColumn({ name: 'ownership_registration_id', type: 'varchar', length: 100 })
+  ownershipRegistrationId: string
+
+  @Column({ name: 'cadastral_number', type: 'varchar', length: 22 })
   cadastralNumber: string
 
   @Column({ name: 'koatuu', type: 'varchar', length: 10 })
@@ -38,15 +41,12 @@ export class LandRegistry {
   @Column({ name: 'state_registration_date', type: 'date' })
   stateRegistrationDate: Date
 
-  @Column({ name: 'ownership_registration_id', type: 'varchar', length: 100 })
-  ownershipRegistrationId: string
-
   @Column({ name: 'registrator', type: 'varchar', length: 255 })
   registrator: string
 
   @Column({ name: 'type', type: 'varchar', length: 100 })
   type: string
 
-  @Column({ name: 'subtype', type: 'varchar', length: 100 })
-  subtype: string
+  @Column({ name: 'subtype', type: 'varchar', length: 100, nullable: true })
+  subtype?: string
 }

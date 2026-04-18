@@ -48,8 +48,8 @@ export class LandCrm {
   @Column({ name: 'type', type: 'varchar', length: 100 })
   type: string
 
-  @Column({ name: 'subtype', type: 'varchar', length: 100 })
-  subtype: string
+  @Column({ name: 'subtype', type: 'varchar', length: 100, nullable: true })
+  subtype?: string
 
   @Column({ name: 'validation_status', type: 'varchar', length: 10, nullable: true })
   validationStatus?: ValidationStatus

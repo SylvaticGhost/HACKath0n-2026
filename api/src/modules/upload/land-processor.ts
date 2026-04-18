@@ -193,6 +193,8 @@ export function processRecords(records: Partial<LandRegistry>[]): ProcessedLandR
         : String(normalized.stateRegistrationDate ?? ''),
     ].join('\x00')
 
+    if (!normalized.ownershipRegistrationId) continue
+
     if (seen.has(dedupKey)) continue
     seen.add(dedupKey)
 
