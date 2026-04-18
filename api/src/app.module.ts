@@ -9,6 +9,7 @@ import { APP_INTERCEPTOR } from '@nestjs/core'
 import { ResultInterceptor } from './middleware/result.interceptor'
 import { CrmModule } from './modules/crm/crm.module'
 import { RegistryModule } from './modules/registry/registry.module'
+import { DiffModule } from './diff/diff.module'
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { RegistryModule } from './modules/registry/registry.module'
     }),
     CrmModule,
     RegistryModule,
+    DiffModule,
   ],
   providers: [
     {
