@@ -1,6 +1,7 @@
 import { Controller, Get, Query } from '@nestjs/common'
 import type { LandCrmDto, PaginatedList, RealtyCrmDto } from 'shared'
 import { Result } from 'shared'
+import { parsePaginationQuery } from '../../utils/pagination-query'
 import { CrmService } from './crm.service'
 
 @Controller('crm')
@@ -12,9 +13,15 @@ export class CrmController {
     @Query('page') page?: string,
     @Query('pageSize') pageSize?: string,
   ): Promise<Result<PaginatedList<LandCrmDto>>> {
-    const parsedPage = Math.max(1, Number.parseInt(page ?? '1', 10) || 1)
-    const parsedPageSize = Math.max(1, Number.parseInt(pageSize ?? '10', 10) || 10)
-    const data = await this.crmService.getLandPaginated(parsedPage, parsedPageSize)
+    const paginationResult = parsePaginationQuery(page, pageSize)
+    if (paginationResult.isFailure()) {
+      return paginationResult.mapFailure<PaginatedList<LandCrmDto>>()
+    }
+
+    const data = await this.crmService.getLandPaginated(
+      paginationResult.strictValue.page,
+      paginationResult.strictValue.pageSize,
+    )
     return Result.success(data)
   }
 
@@ -23,9 +30,15 @@ export class CrmController {
     @Query('page') page?: string,
     @Query('pageSize') pageSize?: string,
   ): Promise<Result<PaginatedList<RealtyCrmDto>>> {
-    const parsedPage = Math.max(1, Number.parseInt(page ?? '1', 10) || 1)
-    const parsedPageSize = Math.max(1, Number.parseInt(pageSize ?? '10', 10) || 10)
-    const data = await this.crmService.getRealtyPaginated(parsedPage, parsedPageSize)
+    const paginationResult = parsePaginationQuery(page, pageSize)
+    if (paginationResult.isFailure()) {
+      return paginationResult.mapFailure<PaginatedList<RealtyCrmDto>>()
+    }
+
+    const data = await this.crmService.getRealtyPaginated(
+      paginationResult.strictValue.page,
+      paginationResult.strictValue.pageSize,
+    )
     return Result.success(data)
   }
 }

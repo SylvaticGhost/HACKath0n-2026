@@ -1,15 +1,6 @@
 import { z } from 'zod'
+import { BaseRealtyDtoSchema } from './realty.base.dto'
 
-export const RealtyRegistryDtoSchema = z.object({
-  stateTaxId: z.string(),
-  ownershipRegistrationDate: z.date(),
-  taxpayerName: z.string(),
-  objectType: z.string(),
-  objectAddress: z.string(),
-  ownershipTerminationDate: z.date().nullable().optional(),
-  totalArea: z.number(),
-  jointOwnershipType: z.string().nullable().optional(),
-  ownershipShare: z.number().nullable().optional(),
-})
+export const RealtyRegistryDtoSchema = BaseRealtyDtoSchema
 
 export interface RealtyRegistryDto extends z.infer<typeof RealtyRegistryDtoSchema> {}

@@ -1,22 +1,6 @@
 import { z } from 'zod'
+import { BaseLandDtoSchema } from './land.base.dto'
 
-export const LandCrmDtoSchema = z.object({
-  cadastralNumber: z.string(),
-  koatuu: z.string(),
-  ownershipType: z.string(),
-  intendedPurpose: z.string(),
-  location: z.string(),
-  landPurposeType: z.string(),
-  square: z.number(),
-  estimateValue: z.number(),
-  stateTaxId: z.string(),
-  user: z.string(),
-  ownerPart: z.number().nullable().optional(),
-  stateRegistrationDate: z.date(),
-  ownershipRegistrationId: z.string(),
-  registrator: z.string(),
-  type: z.string(),
-  subtype: z.string(),
-})
+export const LandCrmDtoSchema = BaseLandDtoSchema
 
 export interface LandCrmDto extends z.infer<typeof LandCrmDtoSchema> {}
