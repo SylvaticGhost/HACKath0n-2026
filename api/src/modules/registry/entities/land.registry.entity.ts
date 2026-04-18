@@ -3,10 +3,10 @@ import { Column, Entity, PrimaryColumn } from 'typeorm'
 @Entity({ name: 'land', schema: 'registry' })
 export class LandRegistry {
   @PrimaryColumn({ type: 'varchar', length: 22 })
-  cadastralNumber: string // e.g. "1234567890:00:000:0000"
+  cadastralNumber: string
 
   @Column({ type: 'varchar', length: 10 })
-  koatuu: string // КОАТУУ — 10-digit region code
+  koatuu: string
 
   @Column({ type: 'varchar', length: 100 })
   ownershipType: string
