@@ -47,6 +47,56 @@ export class CrmService {
     return this.landCrmRepository.count({ where: { validationStatus: 'INVALID' } })
   }
 
+  async suggestLandByLocation(query: string, limit = 10): Promise<LandCrmDto[]> {
+    return this.entityManager
+      .createQueryBuilder(LandCrm, 'land')
+      .where('land.location ILIKE :q', { q: `%${query}%` })
+      .orderBy('land.cadastralNumber', 'ASC')
+      .take(limit)
+      .getMany()
+  }
+
+  async suggestRealtyByLocation(query: string, limit = 10): Promise<RealtyCrmDto[]> {
+    return this.entityManager
+      .createQueryBuilder(RealtyCrm, 'realty')
+      .where('realty.objectAddress ILIKE :q', { q: `%${query}%` })
+      .orderBy('realty.stateTaxId', 'ASC')
+      .take(limit)
+      .getMany()
+  }
+
+  async searchLand(params: LandSearchDto, page: number, pageSize: number): Promise<PaginatedList<LandCrmDto>> {
+    const query = this.entityManager.createQueryBuilder(LandCrm, 'land')
+
+    if (params.cadastralNumber) {
+      query.andWhere('land.cadastralNumber ILIKE :cadastralNumber', {
+        cadastralNumber: `%${params.cadastralNumber}%`,
+      })
+    }
+    if (params.stateTaxId) {
+      query.andWhere('land.stateTaxId ILIKE :stateTaxId', { stateTaxId: `%${params.stateTaxId}%` })
+    }
+    if (params.user) {
+      query.andWhere('land.user ILIKE :user', { user: `%${params.user}%` })
+    }
+    if (params.location) {
+      query.andWhere('land.location ILIKE :location', { location: `%${params.location}%` })
+    }
+
+    const [items, totalItems] = await query
+      .orderBy('land.cadastralNumber', 'ASC')
+      .skip((page - 1) * pageSize)
+      .take(pageSize)
+      .getManyAndCount()
+
+    return {
+      items,
+      totalItems,
+      page,
+      pageSize,
+    }
+  }
+
   async getLandById(cadastralNumber: string): Promise<Result<LandCrmDto>> {
     const item = await this.landCrmRepository.findOne({ where: { cadastralNumber } })
     if (!item) {

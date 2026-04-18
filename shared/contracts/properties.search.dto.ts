@@ -16,3 +16,10 @@ export const RealtySearchSchema = z.object({
 })
 
 export type RealtySearchDto = z.infer<typeof RealtySearchSchema>
+
+export const LocationSuggestionSchema = z.object({
+  query: z.string().min(3, 'query must be at least 3 characters'),
+  limit: z.coerce.number().int().positive().optional(),
+})
+
+export type LocationSuggestionDto = z.infer<typeof LocationSuggestionSchema>
