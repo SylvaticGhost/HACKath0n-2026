@@ -1,12 +1,16 @@
-import { Controller, Get, Query, Delete } from '@nestjs/common'
-import type { LandCrmDto, PaginatedList, RealtyCrmDto } from 'shared'
+import { Body, Controller, Delete, Get, Param, Post, Put, Query, UsePipes } from '@nestjs/common'
+import type { LandCrmDto, PaginatedList, RealtyCrmDto, UpdateLandCrmDto, UpdateRealtyCrmDto } from 'shared'
+import { LandCrmDtoSchema, RealtyCrmDtoSchema, UpdateLandCrmDtoSchema, UpdateRealtyCrmDtoSchema } from 'shared'
 import { parsePaginationQuery } from '../../utils/pagination-query'
 import { CrmService } from './crm.service'
 import { Result } from 'shared'
+import { ZodValidationPipe } from '../../middleware/zod-validation.pipe'
 
 @Controller('crm')
 export class CrmController {
   constructor(private readonly crmService: CrmService) {}
+
+  // ── Land ──────────────────────────────────────────────────────────────────
 
   @Get('land')
   async getLandPaginated(
@@ -25,6 +29,32 @@ export class CrmController {
     return Result.success(data)
   }
 
+  @Get('land/:cadastralNumber')
+  async getLandById(@Param('cadastralNumber') cadastralNumber: string): Promise<Result<LandCrmDto>> {
+    return this.crmService.getLandById(cadastralNumber)
+  }
+
+  @Post('land')
+  @UsePipes(new ZodValidationPipe(LandCrmDtoSchema))
+  async createLand(@Body() dto: LandCrmDto): Promise<Result<LandCrmDto>> {
+    return this.crmService.createLand(dto)
+  }
+
+  @Put('land/:cadastralNumber')
+  async updateLand(
+    @Param('cadastralNumber') cadastralNumber: string,
+    @Body(new ZodValidationPipe(UpdateLandCrmDtoSchema)) dto: UpdateLandCrmDto,
+  ): Promise<Result<LandCrmDto>> {
+    return this.crmService.updateLand(cadastralNumber, dto)
+  }
+
+  @Delete('land/:cadastralNumber')
+  async deleteLand(@Param('cadastralNumber') cadastralNumber: string): Promise<Result<null>> {
+    return this.crmService.deleteLand(cadastralNumber)
+  }
+
+  // ── Realty ────────────────────────────────────────────────────────────────
+
   @Get('realty')
   async getRealtyPaginated(
     @Query('page') page?: string,
@@ -41,6 +71,51 @@ export class CrmController {
     )
     return Result.success(data)
   }
+
+  @Get('realty/:stateTaxId/:ownershipRegistrationDate')
+  async getRealtyById(
+    @Param('stateTaxId') stateTaxId: string,
+    @Param('ownershipRegistrationDate') ownershipRegistrationDateStr: string,
+  ): Promise<Result<RealtyCrmDto>> {
+    const date = new Date(ownershipRegistrationDateStr)
+    if (isNaN(date.getTime())) {
+      return Result.badRequest<RealtyCrmDto>('Invalid ownershipRegistrationDate format')
+    }
+    return this.crmService.getRealtyById(stateTaxId, date)
+  }
+
+  @Post('realty')
+  @UsePipes(new ZodValidationPipe(RealtyCrmDtoSchema))
+  async createRealty(@Body() dto: RealtyCrmDto): Promise<Result<RealtyCrmDto>> {
+    return this.crmService.createRealty(dto)
+  }
+
+  @Put('realty/:stateTaxId/:ownershipRegistrationDate')
+  async updateRealty(
+    @Param('stateTaxId') stateTaxId: string,
+    @Param('ownershipRegistrationDate') ownershipRegistrationDateStr: string,
+    @Body(new ZodValidationPipe(UpdateRealtyCrmDtoSchema)) dto: UpdateRealtyCrmDto,
+  ): Promise<Result<RealtyCrmDto>> {
+    const date = new Date(ownershipRegistrationDateStr)
+    if (isNaN(date.getTime())) {
+      return Result.badRequest<RealtyCrmDto>('Invalid ownershipRegistrationDate format')
+    }
+    return this.crmService.updateRealty(stateTaxId, date, dto)
+  }
+
+  @Delete('realty/:stateTaxId/:ownershipRegistrationDate')
+  async deleteRealty(
+    @Param('stateTaxId') stateTaxId: string,
+    @Param('ownershipRegistrationDate') ownershipRegistrationDateStr: string,
+  ): Promise<Result<null>> {
+    const date = new Date(ownershipRegistrationDateStr)
+    if (isNaN(date.getTime())) {
+      return Result.badRequest<null>('Invalid ownershipRegistrationDate format')
+    }
+    return this.crmService.deleteRealty(stateTaxId, date)
+  }
+
+  // ── Utility ───────────────────────────────────────────────────────────────
 
   @Delete('data')
   async clearData(): Promise<Result<null>> {

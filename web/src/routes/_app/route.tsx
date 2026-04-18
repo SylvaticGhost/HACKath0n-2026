@@ -1,4 +1,5 @@
-import NavBar from '@/components/NavBar'
+import { AppSidebar } from '@/components/app-sidebar'
+import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar'
 import { createFileRoute, Outlet } from '@tanstack/react-router'
 
 export const Route = createFileRoute('/_app')({
@@ -7,11 +8,19 @@ export const Route = createFileRoute('/_app')({
 
 function RouteComponent() {
   return (
-    <div className="flex h-screen">
-      <NavBar />
-      <main className="flex-1 min-h-0 w-full max-w-screen-xl mx-auto px-4 md:px-8 py-6 flex flex-col">
-        <Outlet />
-      </main>
-    </div>
+    <SidebarProvider>
+      <AppSidebar />
+      <SidebarInset>
+        <header className="flex h-14 shrink-0 items-center gap-2 border-b bg-background/95 px-4 backdrop-blur md:px-6">
+          <SidebarTrigger className="-ml-1" />
+          <div className="h-4 w-px bg-border" aria-hidden />
+          <p className="text-sm font-medium text-muted-foreground">Registry navigation</p>
+        </header>
+
+        <main className="mx-auto flex min-h-0 w-full max-w-7xl flex-1 flex-col px-4 py-6 md:px-8">
+          <Outlet />
+        </main>
+      </SidebarInset>
+    </SidebarProvider>
   )
 }

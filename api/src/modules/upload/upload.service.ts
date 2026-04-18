@@ -30,24 +30,33 @@ const LAND_COLUMN_MAP: Record<string, keyof LandRegistry> = {
   Місцерозташування: 'location',
   Адреса: 'location',
   location: 'location',
+  'Вид с/г угідь': 'landPurposeType',
   'Вид використання': 'landPurposeType',
   landPurposeType: 'landPurposeType',
+  'Площа, га': 'square',
   'Площа (га)': 'square',
   Площа: 'square',
   square: 'square',
+  'Усереднена нормативно грошова оцінка': 'estimateValue',
   НГО: 'estimateValue',
   estimateValue: 'estimateValue',
+  'ЄДРПОУ землекористувача': 'stateTaxId',
   ЄДРПОУ: 'stateTaxId',
   stateTaxId: 'stateTaxId',
+  Землекористувач: 'user',
   Власник: 'user',
   user: 'user',
+  'Частка володіння': 'ownerPart',
   Частка: 'ownerPart',
   ownerPart: 'ownerPart',
+  'Дата державної реєстрації права власності': 'stateRegistrationDate',
   'Дата державної реєстрації': 'stateRegistrationDate',
   'Дата реєстрації': 'stateRegistrationDate',
   stateRegistrationDate: 'stateRegistrationDate',
+  'Номер запису про право власності': 'ownershipRegistrationId',
   'Номер реєстрації': 'ownershipRegistrationId',
   ownershipRegistrationId: 'ownershipRegistrationId',
+  'Орган, що здійснив державну реєстрацію права власності': 'registrator',
   Реєстратор: 'registrator',
   registrator: 'registrator',
   Тип: 'type',
@@ -107,27 +116,49 @@ export class UploadService {
         errorDetails: [],
       }
 
+      const records: Partial<LandRegistry>[] = []
       for (const row of rows) {
-        try {
-          const record = this.mapToLandRecord(row)
-          if (!record.cadastralNumber) {
-            stats.errors++
-            stats.errorDetails.push(`Row missing cadastralNumber: ${JSON.stringify(row)}`)
-            continue
-          }
+        const record = this.mapToLandRecord(row)
+        if (!record.cadastralNumber) {
+          stats.errors++
+          stats.errorDetails.push(`Row missing cadastralNumber`)
+          continue
+        }
+        records.push(record)
+      }
 
-          const exists = await this.landRegistryRepo.findOne({ where: { cadastralNumber: record.cadastralNumber } })
-          if (exists) {
-            await this.landCrmRepo.save(record as unknown as LandCrm)
-            stats.redirectedToCrm++
-          } else {
-            await this.landRegistryRepo.save(record)
-            stats.insertedToRegistry++
-          }
+      if (records.length === 0) return Result.success(stats)
+
+      // One query to find all existing cadastral numbers
+      const allNumbers = records.map((r) => r.cadastralNumber!)
+      const existing = await this.landRegistryRepo
+        .createQueryBuilder('l')
+        .select('l.cadastralNumber')
+        .where('l.cadastralNumber IN (:...numbers)', { numbers: allNumbers })
+        .getMany()
+      const existingSet = new Set(existing.map((e) => e.cadastralNumber))
+
+      const toRegistry = records.filter((r) => !existingSet.has(r.cadastralNumber!))
+      const toCrm = records.filter((r) => existingSet.has(r.cadastralNumber!))
+
+      // Bulk insert in chunks of 500
+      const CHUNK = 500
+      for (let i = 0; i < toRegistry.length; i += CHUNK) {
+        try {
+          await this.landRegistryRepo.insert(toRegistry.slice(i, i + CHUNK) as LandRegistry[])
+          stats.insertedToRegistry += Math.min(CHUNK, toRegistry.length - i)
         } catch (err: any) {
           stats.errors++
-          stats.errorDetails.push(err?.message ?? String(err))
-          this.logger.error('Error processing land row', err)
+          stats.errorDetails.push(`Registry insert chunk error: ${err?.message}`)
+        }
+      }
+      for (let i = 0; i < toCrm.length; i += CHUNK) {
+        try {
+          await this.landCrmRepo.save(toCrm.slice(i, i + CHUNK) as unknown as LandCrm[])
+          stats.redirectedToCrm += Math.min(CHUNK, toCrm.length - i)
+        } catch (err: any) {
+          stats.errors++
+          stats.errorDetails.push(`CRM insert chunk error: ${err?.message}`)
         }
       }
 
@@ -149,48 +180,69 @@ export class UploadService {
         errorDetails: [],
       }
 
+      const records: Partial<RealtyRegistry>[] = []
       for (const row of rows) {
-        try {
-          const record = this.mapToRealtyRecord(row)
-          if (!record.stateTaxId || !record.ownershipRegistrationDate) {
-            stats.errors++
-            stats.errorDetails.push(
-              `Row missing required fields (stateTaxId/ownershipRegistrationDate): ${JSON.stringify(row)}`,
-            )
-            continue
-          }
-
-          const exists = await this.realtyRegistryRepo.findOne({
-            where: { stateTaxId: record.stateTaxId, ownershipRegistrationDate: record.ownershipRegistrationDate },
-          })
-
-          if (exists) {
-            await this.realtyCrmRepo.save(record as unknown as RealtyCrm)
-            stats.redirectedToCrm++
-          } else {
-            await this.realtyRegistryRepo.save(record)
-            stats.insertedToRegistry++
-          }
-        } catch (err) {
+        const record = this.mapToRealtyRecord(row)
+        if (!record.stateTaxId || !record.ownershipRegistrationDate) {
           stats.errors++
-          stats.errorDetails.push(err.message)
-          this.logger.error('Error processing realty row', err)
+          stats.errorDetails.push(`Row missing required fields (stateTaxId/ownershipRegistrationDate)`)
+          continue
+        }
+        records.push(record)
+      }
+
+      if (records.length === 0) return Result.success(stats)
+
+      // One query to find all existing composite keys
+      const allIds = records.map((r) => r.stateTaxId!)
+      const existing = await this.realtyRegistryRepo
+        .createQueryBuilder('r')
+        .select(['r.stateTaxId', 'r.ownershipRegistrationDate'])
+        .where('r.stateTaxId IN (:...ids)', { ids: allIds })
+        .getMany()
+      const existingSet = new Set(existing.map((e) => `${e.stateTaxId}_${e.ownershipRegistrationDate}`))
+
+      const toRegistry = records.filter((r) => !existingSet.has(`${r.stateTaxId}_${r.ownershipRegistrationDate}`))
+      const toCrm = records.filter((r) => existingSet.has(`${r.stateTaxId}_${r.ownershipRegistrationDate}`))
+
+      const CHUNK = 500
+      for (let i = 0; i < toRegistry.length; i += CHUNK) {
+        try {
+          await this.realtyRegistryRepo.insert(toRegistry.slice(i, i + CHUNK) as RealtyRegistry[])
+          stats.insertedToRegistry += Math.min(CHUNK, toRegistry.length - i)
+        } catch (err: any) {
+          stats.errors++
+          stats.errorDetails.push(`Registry insert chunk error: ${err?.message}`)
+        }
+      }
+      for (let i = 0; i < toCrm.length; i += CHUNK) {
+        try {
+          await this.realtyCrmRepo.save(toCrm.slice(i, i + CHUNK) as unknown as RealtyCrm[])
+          stats.redirectedToCrm += Math.min(CHUNK, toCrm.length - i)
+        } catch (err: any) {
+          stats.errors++
+          stats.errorDetails.push(`CRM insert chunk error: ${err?.message}`)
         }
       }
 
       return Result.success(stats)
-    } catch (err) {
+    } catch (err: any) {
       this.logger.error('Failed to process realty file', err)
-      return Result.internalError(`Failed to process file: ${err.message}`)
+      return Result.internalError(`Failed to process file: ${err?.message ?? String(err)}`)
     }
   }
 
   private async parseFile(file: Express.Multer.File): Promise<Record<string, string>[]> {
-    const ext = file.originalname.toLowerCase().split('.').pop()
+    const name = Buffer.from(file.originalname ?? '', 'latin1').toString('utf8')
+    const ext = name.toLowerCase().split('.').pop()
 
-    if (ext === 'csv') {
+    // Fallback: якщо розширення не визначилось, визначаємо по magic bytes
+    const isXlsx = file.buffer[0] === 0x50 && file.buffer[1] === 0x4b // PK signature
+    const isCsv = !isXlsx && (ext === 'csv' || file.mimetype?.includes('csv') || file.mimetype?.includes('text'))
+
+    if (isCsv) {
       return this.parseCsv(file.buffer)
-    } else if (ext === 'xlsx' || ext === 'xls') {
+    } else if (isXlsx || ext === 'xlsx' || ext === 'xls') {
       return this.parseExcel(file.buffer)
     } else {
       throw new Error(`Unsupported file format: .${ext}. Supported formats: .csv, .xlsx, .xls`)
