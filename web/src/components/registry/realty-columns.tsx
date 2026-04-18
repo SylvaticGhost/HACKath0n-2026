@@ -1,61 +1,37 @@
 import type { ColumnDef } from '@tanstack/react-table'
 import type { RealtyRegistryDto } from '../../../../shared/contracts/realty.registry.dto'
-import { format } from 'date-fns'
-import { ValidationStatusIndicator, type ValidationMetadata } from './validation-status-indicator'
+import { createRegistryColumn, formatDateValue, formatNumberValue } from './registry-column-helpers'
 
 export const realtyColumns: ColumnDef<RealtyRegistryDto>[] = [
-  {
-    id: 'validation',
-    header: '',
-    cell: ({ row }) => <ValidationStatusIndicator value={row.original as RealtyRegistryDto & ValidationMetadata} />,
-  },
-  {
-    accessorKey: 'objectType',
-    header: 'Object Type',
-  },
-  {
-    accessorKey: 'objectAddress',
-    header: 'Address',
-  },
-  {
-    accessorKey: 'taxpayerName',
-    header: 'Taxpayer',
-  },
-  {
-    accessorKey: 'stateTaxId',
-    header: 'Tax ID',
-  },
-  {
-    accessorKey: 'ownershipRegistrationDate',
-    header: 'Registration Date',
-    cell: ({ row }) => {
-      const dateVal = row.getValue('ownershipRegistrationDate')
-      if (!dateVal) return '-'
-      try {
-        return format(new Date(dateVal as string | number | Date), 'PP')
-      } catch {
-        return String(dateVal)
-      }
-    },
-  },
-  {
-    accessorKey: 'totalArea',
-    header: 'Total Area',
-    cell: ({ row }) => {
-      const val = parseFloat(row.getValue('totalArea'))
-      return isNaN(val) ? '-' : val.toLocaleString()
-    },
-  },
-  {
-    accessorKey: 'jointOwnershipType',
-    header: 'Joint Ownership',
-  },
-  {
-    accessorKey: 'ownershipShare',
-    header: 'Share',
-    cell: ({ row }) => {
-      const val = row.getValue('ownershipShare')
-      return val !== null && val !== undefined ? String(val) : '-'
-    },
-  },
+  createRegistryColumn<RealtyRegistryDto>('stateTaxId', 'state_tax_id', {
+    widthClassName: 'w-[10rem] max-w-[10rem]',
+  }),
+  createRegistryColumn<RealtyRegistryDto>('ownershipRegistrationDate', 'ownership_registration_date', {
+    widthClassName: 'w-[12rem] max-w-[12rem]',
+    formatValue: formatDateValue,
+  }),
+  createRegistryColumn<RealtyRegistryDto>('taxpayerName', 'taxpayer_name', {
+    widthClassName: 'w-[14rem] max-w-[14rem]',
+  }),
+  createRegistryColumn<RealtyRegistryDto>('objectType', 'object_type', {
+    widthClassName: 'w-[11rem] max-w-[11rem]',
+  }),
+  createRegistryColumn<RealtyRegistryDto>('objectAddress', 'object_address', {
+    widthClassName: 'w-[18rem] max-w-[18rem]',
+  }),
+  createRegistryColumn<RealtyRegistryDto>('ownershipTerminationDate', 'ownership_termination_date', {
+    widthClassName: 'w-[12rem] max-w-[12rem]',
+    formatValue: formatDateValue,
+  }),
+  createRegistryColumn<RealtyRegistryDto>('totalArea', 'total_area', {
+    widthClassName: 'w-[8rem] max-w-[8rem]',
+    formatValue: formatNumberValue,
+  }),
+  createRegistryColumn<RealtyRegistryDto>('jointOwnershipType', 'joint_ownership_type', {
+    widthClassName: 'w-[13rem] max-w-[13rem]',
+  }),
+  createRegistryColumn<RealtyRegistryDto>('ownershipShare', 'ownership_share', {
+    widthClassName: 'w-[9rem] max-w-[9rem]',
+    formatValue: formatNumberValue,
+  }),
 ]

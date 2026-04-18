@@ -27,7 +27,7 @@ export function DataTable<TData, TValue>({
   return (
     <div className="space-y-4">
       <div className="overflow-hidden rounded-xl border bg-card">
-        <Table>
+        <Table className="min-w-full w-max">
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
