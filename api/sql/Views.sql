@@ -28,7 +28,11 @@ SELECT
     c."user" AS crm_user,
     c.square AS crm_square,
     c.estimate_value AS crm_estimate_value,
-    c.location AS crm_location
+    c.location AS crm_location,
+
+    -- Валідація CRM-запису
+    c.validation_status AS crm_validation_status,
+    c.validation_errors AS crm_validation_errors
 
 FROM registry.land r
 FULL OUTER JOIN crm.land c
@@ -63,7 +67,11 @@ SELECT
     c.taxpayer_name AS crm_taxpayer_name,
     c.object_address AS crm_address,
     c.total_area AS crm_total_area,
-    c.ownership_share AS crm_ownership_share
+    c.ownership_share AS crm_ownership_share,
+
+    -- Валідація CRM-запису
+    c.validation_status AS crm_validation_status,
+    c.validation_errors AS crm_validation_errors
 
 FROM registry.realty r
 FULL OUTER JOIN crm.realty c
