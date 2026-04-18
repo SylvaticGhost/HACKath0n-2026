@@ -12,7 +12,7 @@ export const BaseLandDtoSchema = z.object({
   stateTaxId: z.string(),
   user: z.string(),
   ownerPart: z.number().nullable().optional(),
-  stateRegistrationDate: z.date(),
+  stateRegistrationDate: z.coerce.date(),
   ownershipRegistrationId: z.string(),
   registrator: z.string(),
   type: z.string(),

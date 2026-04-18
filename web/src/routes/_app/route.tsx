@@ -10,7 +10,7 @@ function RouteComponent() {
   return (
     <SidebarProvider>
       <AppSidebar />
-      <SidebarInset>
+      <SidebarInset className="overflow-hidden">
         <header className="flex h-14 shrink-0 items-center gap-2 border-b bg-background/95 px-4 backdrop-blur md:px-6">
           <SidebarTrigger className="-ml-1" />
           <div className="h-4 w-px bg-border" aria-hidden />
