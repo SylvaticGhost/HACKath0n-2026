@@ -1,7 +1,18 @@
 import * as React from 'react'
 import { Link, useRouterState } from '@tanstack/react-router'
 import { useTheme } from 'next-themes'
-import { Building2, ChevronDown, FileUp, Globe2, Landmark, LogOut, MapPinned, Moon, Sun } from 'lucide-react'
+import {
+  Building2,
+  ChevronDown,
+  FileUp,
+  Globe2,
+  Landmark,
+  LayoutDashboard,
+  LogOut,
+  MapPinned,
+  Moon,
+  Sun,
+} from 'lucide-react'
 
 import { ModeToggle } from '@/components/mode-toggle'
 import { Button } from '@/components/ui/button'
@@ -35,7 +46,10 @@ interface RegistryGroup {
   items: NavigationItem[]
 }
 
-const primaryItems: NavigationItem[] = [{ label: 'Upload File', to: '/upload_file', icon: FileUp }]
+const primaryItems: NavigationItem[] = [
+  { label: 'Dashboard', to: '/', icon: LayoutDashboard },
+  { label: 'Upload File', to: '/upload_file', icon: FileUp },
+]
 
 const registryGroups: RegistryGroup[] = [
   {

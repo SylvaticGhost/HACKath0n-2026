@@ -29,7 +29,7 @@ export interface ProcessedRealtyRecord extends Partial<RealtyRegistry> {
 
 // ─── Enums ────────────────────────────────────────────────────────────────────
 
-export type ObjectTypeEnum = 'APARTMENT' | 'HOUSE' | 'COMMERCIAL' | 'LAND' | 'OTHER'
+export type ObjectTypeEnum = 'Квартира' | 'Будинок' | 'Нежитлове приміщення' | 'Земельна ділянка' | 'Інше'
 export type MaterialEnum = 'BRICK' | 'PANEL' | 'CONCRETE' | 'OTHER'
 
 // ─── NULL sentinel values ──────────────────────────────────────────────────────
@@ -51,19 +51,19 @@ function normalizeString(value: unknown): string | null {
 // ─── 1. object_type ───────────────────────────────────────────────────────────
 
 const OBJECT_TYPE_MAP: Record<string, ObjectTypeEnum> = {
-  квартира: 'APARTMENT',
-  'житлова квартира': 'APARTMENT',
-  будинок: 'HOUSE',
-  'житловий будинок': 'HOUSE',
-  'нежитлове приміщення': 'COMMERCIAL',
-  'комерційне приміщення': 'COMMERCIAL',
-  'земельна ділянка': 'LAND',
+  квартира: 'Квартира',
+  'житлова квартира': 'Квартира',
+  будинок: 'Будинок',
+  'житловий будинок': 'Будинок',
+  'нежитлове приміщення': 'Нежитлове приміщення',
+  'комерційне приміщення': 'Нежитлове приміщення',
+  'земельна ділянка': 'Земельна ділянка',
 }
 
 export function normalizeObjectType(value: unknown): ObjectTypeEnum | null {
   const s = normalizeString(value)
   if (!s) return null
-  return OBJECT_TYPE_MAP[s.toLowerCase()] ?? 'OTHER'
+  return OBJECT_TYPE_MAP[s.toLowerCase()] ?? 'Інше'
 }
 
 // ─── 2. object_name ───────────────────────────────────────────────────────────
@@ -355,14 +355,11 @@ export function processRealtyRecords(records: Partial<RealtyRegistry>[]): Proces
     const normalized = normalizeRealtyRecord(raw)
     const { status, errors } = validateRealtyRecord(normalized)
 
-    const dedupKey = [
-      normalized.stateTaxId ?? '',
-      normalized.taxpayerName ?? '',
-      normalized.objectType ?? '',
+    const dateStr =
       normalized.ownershipRegistrationDate instanceof Date
         ? normalized.ownershipRegistrationDate.toISOString().slice(0, 10)
-        : String(normalized.ownershipRegistrationDate ?? ''),
-    ].join('\x00')
+        : String(normalized.ownershipRegistrationDate ?? '')
+    const dedupKey = `${normalized.stateTaxId ?? ''}\x00${dateStr}`
 
     if (seen.has(dedupKey)) continue
     seen.add(dedupKey)
