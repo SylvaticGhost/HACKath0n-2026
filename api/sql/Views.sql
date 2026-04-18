@@ -28,7 +28,7 @@ SELECT
           OR r.ownership_type IS DISTINCT FROM c.ownership_type
           OR r.location IS DISTINCT FROM c.location
           OR r.owner_part IS DISTINCT FROM c.owner_part
-        THEN crm.calculate_land_similarity(c, r)
+        THEN crm.calculate_land_similarity(c, r) -- Викликаємо нашу нову функцію
         ELSE 100
     END AS similarity_score,
 
@@ -50,7 +50,8 @@ SELECT
     c.validation_status AS crm_validation_status,
     c.validation_errors AS crm_validation_errors
 
-FROM registry.land r
+-- Використовуємо нормалізоване view для реєстру
+FROM crm.normalized_registry_land r
 FULL OUTER JOIN crm.land c
     ON r.cadastral_number = c.cadastral_number;
 
@@ -81,6 +82,7 @@ SELECT
           OR r.object_address IS DISTINCT FROM c.object_address
           OR r.total_area IS DISTINCT FROM c.total_area
           OR r.ownership_share IS DISTINCT FROM c.ownership_share
+        -- Кастування більше не потрібне, оскільки "r" вже є типом crm.normalized_registry_realty
         THEN crm.calculate_realty_similarity(c, r)
         ELSE 100
     END AS similarity_score,
@@ -101,7 +103,8 @@ SELECT
     c.validation_status AS crm_validation_status,
     c.validation_errors AS crm_validation_errors
 
-FROM registry.realty r
+-- ЗМІНА ТУТ: Використовуємо нормалізоване view замість базової таблиці
+FROM crm.normalized_registry_realty r
 FULL OUTER JOIN crm.realty c
     ON r.state_tax_id = c.state_tax_id
     AND r.ownership_registration_date = c.ownership_registration_date;

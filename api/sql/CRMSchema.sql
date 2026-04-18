@@ -2,21 +2,21 @@ CREATE SCHEMA IF NOT EXISTS crm;
 
 CREATE TABLE IF NOT EXISTS crm.land (
   cadastral_number          VARCHAR(22)        PRIMARY KEY,
-  koatuu                    VARCHAR(10),
-  ownership_type            VARCHAR(100),
-  intended_purpose          TEXT,
-  location                  TEXT,
-  land_purpose_type         VARCHAR(255),
-  square                    NUMERIC(12, 4),
-  estimate_value            NUMERIC(15, 2),
-  state_tax_id              VARCHAR(10),
-  "user"                    VARCHAR(255),
+  koatuu                    VARCHAR(10)        NOT NULL,
+  ownership_type            VARCHAR(100)       NOT NULL,
+  intended_purpose          TEXT               NOT NULL,
+  location                  TEXT               NOT NULL,
+  land_purpose_type         VARCHAR(255)       NOT NULL,
+  square                    NUMERIC(12, 4)     NOT NULL,
+  estimate_value            NUMERIC(15, 2)     NOT NULL,
+  state_tax_id              VARCHAR(10)        NOT NULL,
+  "user"                    VARCHAR(255)       NOT NULL,
   owner_part                NUMERIC(5, 4),
-  state_registration_date   DATE,
-  ownership_registration_id VARCHAR(100),
-  registrator               VARCHAR(255),
-  type                      VARCHAR(100),
-  subtype                   VARCHAR(100),
+  state_registration_date   DATE               NOT NULL,
+  ownership_registration_id VARCHAR(100)       NOT NULL,
+  registrator               VARCHAR(255)       NOT NULL,
+  type                      VARCHAR(100)       NOT NULL,
+  subtype                   VARCHAR(100)       NOT NULL,
   validation_status         VARCHAR(10),
   validation_errors         TEXT[]
 );
@@ -36,9 +36,42 @@ CREATE TABLE IF NOT EXISTS crm.realty (
   PRIMARY KEY (state_tax_id, ownership_registration_date)
 );
 
+CREATE VIEW crm.normalized_registry_land AS
+SELECT
+    cadastral_number,
+    koatuu,
+    ownership_type,
+    intended_purpose,
+    location,
+    land_purpose_type,
+    square,
+    estimate_value,
+    state_tax_id,
+    "user",
+    owner_part,
+    state_registration_date,
+    ownership_registration_id,
+    registrator,
+    type,
+    subtype
+FROM registry.land;
+
+CREATE VIEW crm.normalized_registry_realty AS
+SELECT
+    state_tax_id,
+    taxpayer_name,
+    object_type,
+    object_address,
+    ownership_registration_date,
+    ownership_termination_date,
+    total_area,
+    joint_ownership_type,
+    ownership_share
+FROM registry.realty;
+
 CREATE OR REPLACE FUNCTION crm.calculate_realty_similarity(
     crm_row crm.realty,
-    reg_row registry.realty
+    reg_row crm.normalized_registry_realty
 )
 RETURNS NUMERIC AS $$
 DECLARE
@@ -84,7 +117,7 @@ $$ LANGUAGE plpgsql IMMUTABLE;
 
 CREATE OR REPLACE FUNCTION crm.calculate_land_similarity(
     crm_row crm.land,
-    reg_row registry.land
+    reg_row crm.normalized_registry_land
 )
 RETURNS NUMERIC AS $$
 DECLARE
