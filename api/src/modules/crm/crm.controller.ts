@@ -2,6 +2,7 @@ import { Body, Controller, Delete, Get, Param, Post, Put, Query, UsePipes } from
 import type {
   LandCrmDto,
   LandSearchDto,
+  LocationSuggestionDto,
   PaginatedList,
   RealtyCrmDto,
   RealtySearchDto,
@@ -11,6 +12,7 @@ import type {
 import {
   LandCrmDtoSchema,
   LandSearchSchema,
+  LocationSuggestionSchema,
   RealtyCrmDtoSchema,
   RealtySearchSchema,
   UpdateLandCrmDtoSchema,
@@ -41,6 +43,14 @@ export class CrmController {
       paginationResult.strictValue.page,
       paginationResult.strictValue.pageSize,
     )
+    return Result.success(data)
+  }
+
+  @Get('land/location-suggestions')
+  async suggestLandByLocation(
+    @Query(new ZodValidationPipe(LocationSuggestionSchema)) { query, limit }: LocationSuggestionDto,
+  ): Promise<Result<LandCrmDto[]>> {
+    const data = await this.crmService.suggestLandByLocation(query, limit)
     return Result.success(data)
   }
 
@@ -102,6 +112,14 @@ export class CrmController {
       paginationResult.strictValue.page,
       paginationResult.strictValue.pageSize,
     )
+    return Result.success(data)
+  }
+
+  @Get('realty/location-suggestions')
+  async suggestRealtyByLocation(
+    @Query(new ZodValidationPipe(LocationSuggestionSchema)) { query, limit }: LocationSuggestionDto,
+  ): Promise<Result<RealtyCrmDto[]>> {
+    const data = await this.crmService.suggestRealtyByLocation(query, limit)
     return Result.success(data)
   }
 

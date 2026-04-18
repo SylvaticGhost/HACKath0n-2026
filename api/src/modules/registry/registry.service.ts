@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common'
 import { InjectEntityManager } from '@nestjs/typeorm'
-import type { LandRegistryDto, PaginatedList, RealtyRegistryDto, LandSearchDto, RealtySearchDto } from 'shared'
+import type { LandRegistryDto, LandSearchDto, PaginatedList, RealtyRegistryDto, RealtySearchDto } from 'shared'
 import { EntityManager } from 'typeorm'
 import { LandRegistry } from './entities/land.registry.entity'
 import { RealtyRegistry } from './entities/realty.registry.entity'
@@ -26,6 +26,24 @@ export class RegistryService {
       page,
       pageSize,
     }
+  }
+
+  async suggestLandByLocation(query: string, limit = 10): Promise<LandRegistryDto[]> {
+    return this.entityManager
+      .createQueryBuilder(LandRegistry, 'land')
+      .where('land.location ILIKE :q', { q: `%${query}%` })
+      .orderBy('land.cadastralNumber', 'ASC')
+      .take(limit)
+      .getMany()
+  }
+
+  async suggestRealtyByLocation(query: string, limit = 10): Promise<RealtyRegistryDto[]> {
+    return this.entityManager
+      .createQueryBuilder(RealtyRegistry, 'realty')
+      .where('realty.objectAddress ILIKE :q', { q: `%${query}%` })
+      .orderBy('realty.stateTaxId', 'ASC')
+      .take(limit)
+      .getMany()
   }
 
   async searchLand(params: LandSearchDto, page: number, pageSize: number): Promise<PaginatedList<LandRegistryDto>> {

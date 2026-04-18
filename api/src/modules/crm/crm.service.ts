@@ -43,6 +43,24 @@ export class CrmService {
     }
   }
 
+  async suggestLandByLocation(query: string, limit = 10): Promise<LandCrmDto[]> {
+    return this.entityManager
+      .createQueryBuilder(LandCrm, 'land')
+      .where('land.location ILIKE :q', { q: `%${query}%` })
+      .orderBy('land.cadastralNumber', 'ASC')
+      .take(limit)
+      .getMany()
+  }
+
+  async suggestRealtyByLocation(query: string, limit = 10): Promise<RealtyCrmDto[]> {
+    return this.entityManager
+      .createQueryBuilder(RealtyCrm, 'realty')
+      .where('realty.objectAddress ILIKE :q', { q: `%${query}%` })
+      .orderBy('realty.stateTaxId', 'ASC')
+      .take(limit)
+      .getMany()
+  }
+
   async searchLand(params: LandSearchDto, page: number, pageSize: number): Promise<PaginatedList<LandCrmDto>> {
     const query = this.entityManager.createQueryBuilder(LandCrm, 'land')
 
