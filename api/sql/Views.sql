@@ -141,15 +141,15 @@ SELECT
     location,
     land_purpose_type,
     ownership_type,
-    square,
-    estimate_value                          AS ngo_uah,
-    1.08                                    AS indexation_coefficient,
-    tax_rate,
+    ROUND(square::NUMERIC, 4)               AS square,
+    ROUND(estimate_value::NUMERIC, 2)       AS ngo_uah,
+    1.08::FLOAT8                            AS indexation_coefficient,
+    tax_rate::FLOAT8                        AS tax_rate,
+    ROUND(owner_part::NUMERIC, 4)           AS owner_part,
     CASE
         WHEN estimate_value IS NULL OR estimate_value = 0 THEN NULL
-        ELSE ROUND(estimate_value * 1.08 * tax_rate * owner_part, 2)
+        ELSE ROUND((estimate_value * 1.08 * tax_rate * owner_part)::NUMERIC, 2)
     END                                     AS annual_tax_uah,
-    owner_part,
     validation_status
 FROM tax_params;
 
@@ -208,12 +208,12 @@ SELECT
   taxpayer_name,
   object_type,
   object_address,
-  total_area,
+  ROUND(total_area::NUMERIC, 2)                             AS total_area,
   exempt_area                                               AS exempt_area_m2,
-  taxable_area                                              AS taxable_area_m2,
+  ROUND(taxable_area::NUMERIC, 2)                           AS taxable_area_m2,
   min_wage_uah,
-  tax_rate,
-  ownership_share,
+  tax_rate::FLOAT8                                          AS tax_rate,
+  ROUND(ownership_share::NUMERIC, 4)                        AS ownership_share,
   ROUND((taxable_area * min_wage_uah * tax_rate * ownership_share)::NUMERIC, 2)
                                                             AS base_tax_uah,
   ROUND((luxury_tax_uah * ownership_share)::NUMERIC, 2)     AS luxury_tax_uah,

@@ -1,4 +1,5 @@
 import { ViewColumn, ViewEntity } from 'typeorm'
+import { numericTransformer } from '../../../utils/numeric-transformer'
 
 @ViewEntity({ name: 'v_realty_tax', schema: 'crm', synchronize: false })
 export class RealtyTaxView {
@@ -20,31 +21,31 @@ export class RealtyTaxView {
   @ViewColumn({ name: 'object_address' })
   objectAddress: string
 
-  @ViewColumn({ name: 'total_area' })
+  @ViewColumn({ name: 'total_area', transformer: numericTransformer })
   totalArea: number
 
-  @ViewColumn({ name: 'exempt_area_m2' })
+  @ViewColumn({ name: 'exempt_area_m2', transformer: numericTransformer })
   exemptAreaM2: number
 
-  @ViewColumn({ name: 'taxable_area_m2' })
+  @ViewColumn({ name: 'taxable_area_m2', transformer: numericTransformer })
   taxableAreaM2: number
 
-  @ViewColumn({ name: 'min_wage_uah' })
+  @ViewColumn({ name: 'min_wage_uah', transformer: numericTransformer })
   minWageUah: number
 
-  @ViewColumn({ name: 'tax_rate' })
+  @ViewColumn({ name: 'tax_rate', transformer: numericTransformer })
   taxRate: number
 
-  @ViewColumn({ name: 'ownership_share' })
+  @ViewColumn({ name: 'ownership_share', transformer: numericTransformer })
   ownershipShare: number
 
-  @ViewColumn({ name: 'base_tax_uah' })
+  @ViewColumn({ name: 'base_tax_uah', transformer: numericTransformer })
   baseTaxUah: number
 
-  @ViewColumn({ name: 'luxury_tax_uah' })
+  @ViewColumn({ name: 'luxury_tax_uah', transformer: numericTransformer })
   luxuryTaxUah: number
 
-  @ViewColumn({ name: 'annual_tax_uah' })
+  @ViewColumn({ name: 'annual_tax_uah', transformer: numericTransformer })
   annualTaxUah: number
 
   @ViewColumn({ name: 'validation_status' })
