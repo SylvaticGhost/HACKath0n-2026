@@ -8,8 +8,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 
-import { RegistryPage } from '@/components/registry/registry-page'
-
 export const Route = createFileRoute('/_app/local-registry/land')({
   component: LocalRegistryLandPage,
 })
@@ -161,7 +159,7 @@ function FloatingEditor({ label, value, inputType, anchorRect, onChange, onCommi
   )
 }
 
-function RouteComponent() {
+function LocalRegistryLandPage() {
   const queryClient = useQueryClient()
   const [page, setPage] = useState(1)
   const [editState, setEditState] = useState<{
