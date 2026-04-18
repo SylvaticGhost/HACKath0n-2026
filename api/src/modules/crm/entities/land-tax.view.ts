@@ -27,15 +27,6 @@ export class LandTaxView {
   @ViewColumn({ name: 'square', transformer: numericTransformer })
   square: number
 
-  @ViewColumn({ name: 'ngo_uah', transformer: numericTransformer })
-  ngoUah: number
-
-  @ViewColumn({ name: 'indexation_coefficient', transformer: numericTransformer })
-  indexationCoefficient: number
-
-  @ViewColumn({ name: 'tax_rate', transformer: numericTransformer })
-  taxRate: number
-
   @ViewColumn({ name: 'owner_part', transformer: numericTransformer })
   ownerPart: number
 

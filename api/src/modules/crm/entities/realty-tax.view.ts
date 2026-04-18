@@ -9,9 +9,6 @@ export class RealtyTaxView {
   @ViewColumn({ name: 'ownership_registration_date' })
   ownershipRegistrationDate: Date
 
-  @ViewColumn({ name: 'ownership_termination_date' })
-  ownershipTerminationDate: Date | null
-
   @ViewColumn({ name: 'taxpayer_name' })
   taxpayerName: string
 
@@ -23,18 +20,6 @@ export class RealtyTaxView {
 
   @ViewColumn({ name: 'total_area', transformer: numericTransformer })
   totalArea: number
-
-  @ViewColumn({ name: 'exempt_area_m2', transformer: numericTransformer })
-  exemptAreaM2: number
-
-  @ViewColumn({ name: 'taxable_area_m2', transformer: numericTransformer })
-  taxableAreaM2: number
-
-  @ViewColumn({ name: 'min_wage_uah', transformer: numericTransformer })
-  minWageUah: number
-
-  @ViewColumn({ name: 'tax_rate', transformer: numericTransformer })
-  taxRate: number
 
   @ViewColumn({ name: 'ownership_share', transformer: numericTransformer })
   ownershipShare: number
