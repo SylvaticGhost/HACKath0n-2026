@@ -85,3 +85,14 @@ export function useRegistryLocationSuggestions(
     staleTime: 30_000,
   })
 }
+
+export function useRegistryInvalidCount(scope: RegistryScope, entity: RegistryEntity) {
+  const apiBase = resolveApiBase(scope)
+  const entityPath = entity === 'Land' ? 'land' : 'realty'
+
+  return useQuery({
+    queryKey: ['registry', scope, entity, 'invalid-count'],
+    queryFn: () => fetchApi<number>(`${apiBase}/${entityPath}/invalid-count`),
+    staleTime: 30_000,
+  })
+}

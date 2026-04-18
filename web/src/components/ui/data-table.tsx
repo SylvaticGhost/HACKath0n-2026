@@ -22,6 +22,8 @@ export function DataTable<TData, TValue>({
     getPaginationRowModel: getPaginationRowModel(),
   })
 
+  const rows = showPaginationControls ? table.getRowModel().rows : table.getCoreRowModel().rows
+
   return (
     <div className="space-y-4">
       <div className="overflow-hidden rounded-xl border bg-card">
@@ -43,8 +45,8 @@ export function DataTable<TData, TValue>({
             ))}
           </TableHeader>
           <TableBody>
-            {table.getRowModel().rows?.length ? (
-              table.getRowModel().rows.map((row) => (
+            {rows.length ? (
+              rows.map((row) => (
                 <TableRow key={row.id} data-state={row.getIsSelected() && 'selected'}>
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id} className="px-3 py-2.5 text-sm">
