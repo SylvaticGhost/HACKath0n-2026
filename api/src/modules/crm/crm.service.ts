@@ -2,8 +2,6 @@ import { Injectable } from '@nestjs/common'
 import { InjectEntityManager } from '@nestjs/typeorm'
 import type { LandCrmDto, PaginatedList, RealtyCrmDto } from 'shared'
 import { EntityManager } from 'typeorm'
-import { LandCrm } from './entities/land.crm.entity'
-import { RealtyCrm } from './entities/realty.crm.entity'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 import { RealtyCrm } from './entities/realty.crm.entity'
@@ -15,6 +13,8 @@ export class CrmService {
   constructor(
     @InjectEntityManager()
     private readonly entityManager: EntityManager,
+    @InjectRepository(RealtyCrm)
+    private readonly realtyCrmRepository: Repository<RealtyCrm>,
   ) {}
 
   async getLandPaginated(page: number, pageSize: number): Promise<PaginatedList<LandCrmDto>> {
@@ -46,7 +46,7 @@ export class CrmService {
       items,
       totalItems,
       page,
-      pageSize
+      pageSize,
     }
   }
 
