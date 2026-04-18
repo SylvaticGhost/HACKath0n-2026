@@ -1,0 +1,31 @@
+{
+  "name": "h-template-rnp-2026",
+  "version": "1.0.0",
+  "workspaces": [
+    "api",
+    "web",
+    "shared"
+  ],
+  "scripts": {
+    "dev:shared": "npm run dev -w shared",
+    "dev:web": "npm run dev -w web",
+    "dev:api": "npm run start:dev -w api",
+    "dev": "cross-env NODE_ENV=development concurrently -n \"SHARED,API,WEB\" -c \"yellow,green,blue\" \"npm run dev:shared\" \"npm run dev:api\" \"npm run dev:web\"",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "prepare": "husky"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "devDependencies": {
+    "concurrently": "^9.2.1",
+    "cross-env": "^10.1.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.4.0"
+  },
+  "lint-staged": {
+    ".": "prettier --write"
+  }
+}
