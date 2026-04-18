@@ -13,6 +13,7 @@ export const LandDiffViewDtoSchema = z.object({
   crmSquare: z.number().nullable(),
   crmEstimateValue: z.number().nullable(),
   crmLocation: z.string().nullable(),
+  similarityScore: z.number().nullable(),
 })
 
 export interface LandDiffViewDto extends z.infer<typeof LandDiffViewDtoSchema> {}
