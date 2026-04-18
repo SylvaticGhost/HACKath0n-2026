@@ -48,23 +48,6 @@ export class CrmController {
   async getLandInvalidCount(): Promise<Result<number>> {
     const count = await this.crmService.getLandInvalidCount()
     return Result.success(count)
-
-  @Get('land/search')
-  async searchLand(
-    @Query(new ZodValidationPipe(LandSearchSchema)) params: LandSearchDto,
-    @Query('page') page?: string,
-    @Query('pageSize') pageSize?: string,
-  ): Promise<Result<PaginatedList<LandCrmDto>>> {
-    const paginationResult = parsePaginationQuery(page, pageSize)
-    if (paginationResult.isFailure()) {
-      return paginationResult.mapFailure<PaginatedList<LandCrmDto>>()
-    }
-    const data = await this.crmService.searchLand(
-      params,
-      paginationResult.strictValue.page,
-      paginationResult.strictValue.pageSize,
-    )
-    return Result.success(data)
   }
 
   @Get('land/:cadastralNumber')
@@ -114,23 +97,6 @@ export class CrmController {
   async getRealtyInvalidCount(): Promise<Result<number>> {
     const count = await this.crmService.getRealtyInvalidCount()
     return Result.success(count)
-
-  @Get('realty/search')
-  async searchRealty(
-    @Query(new ZodValidationPipe(RealtySearchSchema)) params: RealtySearchDto,
-    @Query('page') page?: string,
-    @Query('pageSize') pageSize?: string,
-  ): Promise<Result<PaginatedList<RealtyCrmDto>>> {
-    const paginationResult = parsePaginationQuery(page, pageSize)
-    if (paginationResult.isFailure()) {
-      return paginationResult.mapFailure<PaginatedList<RealtyCrmDto>>()
-    }
-    const data = await this.crmService.searchRealty(
-      params,
-      paginationResult.strictValue.page,
-      paginationResult.strictValue.pageSize,
-    )
-    return Result.success(data)
   }
 
   @Get('realty/:stateTaxId/:ownershipRegistrationDate')

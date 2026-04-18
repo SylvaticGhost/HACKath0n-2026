@@ -45,37 +45,6 @@ export class CrmService {
 
   async getLandInvalidCount(): Promise<number> {
     return this.landCrmRepository.count({ where: { validationStatus: 'INVALID' } })
-
-  async searchLand(params: LandSearchDto, page: number, pageSize: number): Promise<PaginatedList<LandCrmDto>> {
-    const query = this.entityManager.createQueryBuilder(LandCrm, 'land')
-
-    if (params.cadastralNumber) {
-      query.andWhere('land.cadastralNumber ILIKE :cadastralNumber', {
-        cadastralNumber: `%${params.cadastralNumber}%`,
-      })
-    }
-    if (params.stateTaxId) {
-      query.andWhere('land.stateTaxId ILIKE :stateTaxId', { stateTaxId: `%${params.stateTaxId}%` })
-    }
-    if (params.user) {
-      query.andWhere('land.user ILIKE :user', { user: `%${params.user}%` })
-    }
-    if (params.location) {
-      query.andWhere('land.location ILIKE :location', { location: `%${params.location}%` })
-    }
-
-    const [items, totalItems] = await query
-      .orderBy('land.cadastralNumber', 'ASC')
-      .skip((page - 1) * pageSize)
-      .take(pageSize)
-      .getManyAndCount()
-
-    return {
-      items,
-      totalItems,
-      page,
-      pageSize,
-    }
   }
 
   async getLandById(cadastralNumber: string): Promise<Result<LandCrmDto>> {
