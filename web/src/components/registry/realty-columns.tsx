@@ -1,8 +1,16 @@
 import type { ColumnDef } from '@tanstack/react-table'
 import type { RealtyRegistryDto } from '../../../../shared/contracts/realty.registry.dto'
 import { createRegistryColumn, formatDateValue, formatNumberValue } from './registry-column-helpers'
+import { ValidationStatusIndicator } from './validation-status-indicator'
 
 export const realtyColumns: ColumnDef<RealtyRegistryDto>[] = [
+  {
+    id: 'validation-status',
+    header: () => <div className="w-5" aria-hidden="true" />,
+    cell: ({ row }) => <ValidationStatusIndicator value={row.original} />,
+    enableSorting: false,
+    size: 28,
+  },
   createRegistryColumn<RealtyRegistryDto>('stateTaxId', 'state_tax_id', {
     widthClassName: 'w-[10rem] max-w-[10rem]',
   }),
