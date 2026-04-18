@@ -2,30 +2,30 @@ import { Column, Entity, PrimaryColumn } from 'typeorm'
 
 @Entity({ name: 'realty', schema: 'crm' })
 export class RealtyCrm {
-  @PrimaryColumn({ type: 'varchar', length: 10 })
+  @PrimaryColumn({ name: 'state_tax_id', type: 'varchar', length: 10 })
   stateTaxId: string
 
-  @PrimaryColumn({ type: 'date' })
+  @PrimaryColumn({ name: 'ownership_registration_date', type: 'date' })
   ownershipRegistrationDate: Date
 
-  @Column({ type: 'varchar', length: 255 })
+  @Column({ name: 'taxpayer_name', type: 'varchar', length: 255 })
   taxpayerName: string
 
-  @Column({ type: 'varchar', length: 100 })
+  @Column({ name: 'object_type', type: 'varchar', length: 100 })
   objectType: string
 
-  @Column({ type: 'text' })
+  @Column({ name: 'object_address', type: 'text' })
   objectAddress: string
 
-  @Column({ type: 'date', nullable: true })
+  @Column({ name: 'ownership_termination_date', type: 'date', nullable: true })
   ownershipTerminationDate?: Date
 
-  @Column({ type: 'numeric', precision: 12, scale: 4 })
+  @Column({ name: 'total_area', type: 'numeric', precision: 12, scale: 4 })
   totalArea: number
 
-  @Column({ type: 'varchar', length: 100, nullable: true })
+  @Column({ name: 'joint_ownership_type', type: 'varchar', length: 100, nullable: true })
   jointOwnershipType?: string
 
-  @Column({ type: 'numeric', precision: 5, scale: 4, nullable: true })
+  @Column({ name: 'ownership_share', type: 'numeric', precision: 5, scale: 4, nullable: true })
   ownershipShare?: number
 }
