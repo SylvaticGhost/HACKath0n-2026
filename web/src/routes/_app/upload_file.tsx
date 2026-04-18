@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { GripVertical } from 'lucide-react'
 
-export const Route = createFileRoute('/_app/drag-and-drop')({
+export const Route = createFileRoute('/_app/upload_file')({
   component: DragAndDropPage,
 })
 
