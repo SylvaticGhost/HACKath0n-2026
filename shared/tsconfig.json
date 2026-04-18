@@ -1,0 +1,11 @@
+﻿{
+  "compilerOptions": {
+    "module": "commonjs",
+    "target": "es2021",
+    "declaration": true,
+    "outDir": "./dist",
+    "strict": true,
+    "esModuleInterop": true
+  },
+  "include": ["index.ts", "utils/**/*.ts", "types/**/*.ts", "consts/**/*.ts", "contracts/**/*.ts"]
+}

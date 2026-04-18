@@ -1,0 +1,32 @@
+import { Module } from '@nestjs/common'
+import { TypeOrmModule } from '@nestjs/typeorm'
+import { UserModule } from './modules/user/user.module'
+import { typeOrmConfig } from './database/typeorm.config'
+import { ConfigModule } from '@nestjs/config'
+import { ServeStaticModule } from '@nestjs/serve-static'
+import { join } from 'path'
+import { AppController } from './app.controller'
+import { APP_INTERCEPTOR } from '@nestjs/core'
+import { ResultInterceptor } from './middleware/result.interceptor'
+
+@Module({
+  imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+    }),
+    TypeOrmModule.forRoot(typeOrmConfig),
+    UserModule,
+    ServeStaticModule.forRoot({
+      rootPath: join(__dirname, '..', 'client'),
+      exclude: ['/api/{*splat}'],
+    }),
+  ],
+  providers: [
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: ResultInterceptor,
+    },
+  ],
+  controllers: [AppController],
+})
+export class AppModule {}
