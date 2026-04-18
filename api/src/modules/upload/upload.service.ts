@@ -8,6 +8,13 @@ import { LandRegistry } from '../registry/entities/land.registry.entity'
 import { RealtyRegistry } from '../registry/entities/realty.registry.entity'
 import { LandCrm } from '../crm/entities/land.crm.entity'
 import { RealtyCrm } from '../crm/entities/realty.crm.entity'
+import {
+  normalizeText,
+  normalizeLocation,
+  normalizeNumeric,
+  excelSerialToDate,
+  isExcelSerial,
+} from '../../utils/normalize'
 
 export interface UploadStats {
   total: number
@@ -57,6 +64,7 @@ const LAND_COLUMN_MAP: Record<string, keyof LandRegistry> = {
   'Номер реєстрації': 'ownershipRegistrationId',
   ownershipRegistrationId: 'ownershipRegistrationId',
   'Орган, що здійснив державну реєстрацію права власності': 'registrator',
+  'Орган, що здійснив державну реєстрацію': 'registrator',
   Реєстратор: 'registrator',
   registrator: 'registrator',
   Тип: 'type',
@@ -65,28 +73,59 @@ const LAND_COLUMN_MAP: Record<string, keyof LandRegistry> = {
   subtype: 'subtype',
 }
 
-// Ukrainian → English column name mappings for realty records
+// Ukrainian → English column name mappings for realty records.
+// Includes all variants observed in the ДРРП нерухомість.xlsx file:
+//   "Податковий номер ПП", "Назва платника",
+//   "Дата держ. реєстр. права власн", "Дата держ. реєстр. прип. права власн",
+//   "Вид спіль ної власності" (typo with space), "Розмір частки у праві спільної власності"
 const REALTY_COLUMN_MAP: Record<string, keyof RealtyRegistry> = {
+  // stateTaxId
   ЄДРПОУ: 'stateTaxId',
+  'Податковий номер ПП': 'stateTaxId',
+  'Податковий номер': 'stateTaxId',
   stateTaxId: 'stateTaxId',
+
+  // ownershipRegistrationDate
   'Дата реєстрації права': 'ownershipRegistrationDate',
   'Дата реєстрації': 'ownershipRegistrationDate',
+  'Дата держ. реєстр. права власн': 'ownershipRegistrationDate',
+  'Дата держ. реєстр. права': 'ownershipRegistrationDate',
   ownershipRegistrationDate: 'ownershipRegistrationDate',
+
+  // taxpayerName
   Платник: 'taxpayerName',
+  'Назва платника': 'taxpayerName',
   taxpayerName: 'taxpayerName',
+
+  // objectType
   "Тип об'єкта": 'objectType',
   objectType: 'objectType',
+
+  // objectAddress
   "Адреса об'єкта": 'objectAddress',
   Адреса: 'objectAddress',
   objectAddress: 'objectAddress',
+
+  // ownershipTerminationDate
   'Дата припинення': 'ownershipTerminationDate',
+  'Дата держ. реєстр. прип. права власн': 'ownershipTerminationDate',
+  'Дата держ. реєстр. прип. права': 'ownershipTerminationDate',
   ownershipTerminationDate: 'ownershipTerminationDate',
+
+  // totalArea
   'Загальна площа': 'totalArea',
   Площа: 'totalArea',
   totalArea: 'totalArea',
+
+  // jointOwnershipType — "Вид спіль ної власності" has a typo (space inside the word)
   'Тип спільної власності': 'jointOwnershipType',
+  'Вид спільної власності': 'jointOwnershipType',
+  'Вид спіль ної власності': 'jointOwnershipType',
   jointOwnershipType: 'jointOwnershipType',
+
+  // ownershipShare
   Частка: 'ownershipShare',
+  'Розмір частки у праві спільної власності': 'ownershipShare',
   ownershipShare: 'ownershipShare',
 }
 
@@ -273,11 +312,18 @@ export class UploadService {
       if (!field || value === undefined || value === null || value === '') continue
 
       const strVal = String(value).trim()
+
       if (['square', 'estimateValue', 'ownerPart'].includes(field)) {
-        const num = parseFloat(strVal.replace(',', '.'))
-        ;(record as any)[field] = isNaN(num) ? undefined : num
+        ;(record as any)[field] = normalizeNumeric(strVal)
       } else if (field === 'stateRegistrationDate') {
-        record.stateRegistrationDate = this.parseDate(strVal)
+        record.stateRegistrationDate = this.parseDate(value)
+      } else if (field === 'location') {
+        // Normalize for cleaner CRM storage — reduces false conflicts in diff
+        record.location = normalizeLocation(strVal)
+      } else if (field === 'user') {
+        record.user = normalizeText(strVal)
+      } else if (field === 'ownershipType') {
+        record.ownershipType = normalizeText(strVal)
       } else {
         ;(record as any)[field] = strVal
       }
@@ -292,11 +338,22 @@ export class UploadService {
       if (!field || value === undefined || value === null || value === '') continue
 
       const strVal = String(value).trim()
+
       if (['totalArea', 'ownershipShare'].includes(field)) {
-        const num = parseFloat(strVal.replace(',', '.'))
-        ;(record as any)[field] = isNaN(num) ? undefined : num
+        ;(record as any)[field] = normalizeNumeric(strVal)
       } else if (['ownershipRegistrationDate', 'ownershipTerminationDate'].includes(field)) {
-        ;(record as any)[field] = this.parseDate(strVal)
+        ;(record as any)[field] = this.parseDate(value)
+      } else if (field === 'objectAddress') {
+        // Normalize address for cleaner CRM storage — reduces false conflicts in diff
+        record.objectAddress = normalizeLocation(strVal)
+      } else if (field === 'objectType') {
+        // Fix Latin lookalike chars (affects ~17% of objectType values in the source file)
+        record.objectType = normalizeText(strVal)
+      } else if (field === 'taxpayerName') {
+        record.taxpayerName = normalizeText(strVal)
+      } else if (field === 'stateTaxId') {
+        // stateTaxId is a numeric code stored as string — keep as-is, just trim
+        record.stateTaxId = strVal
       } else {
         ;(record as any)[field] = strVal
       }
@@ -304,18 +361,39 @@ export class UploadService {
     return record
   }
 
-  private parseDate(value: string | Date | undefined): Date | undefined {
-    if (!value) return undefined
+  /**
+   * Parse a date value from various formats:
+   *  - JS Date object (from xlsx cellDates: true)
+   *  - Excel serial number (integer like 41309)
+   *  - DD.MM.YYYY string
+   *  - ISO YYYY-MM-DD string
+   */
+  private parseDate(value: string | Date | number | undefined): Date | undefined {
+    if (!value && value !== 0) return undefined
+
     // Handle Date objects passed directly from xlsx (cellDates: true)
-    if (value instanceof Date) return value
+    if (value instanceof Date) return isNaN(value.getTime()) ? undefined : value
+
+    // Handle Excel serial date numbers (e.g. 41309 = 2013-02-28)
+    if (isExcelSerial(value)) return excelSerialToDate(value as number)
+
+    const strVal = String(value).trim()
+    if (!strVal) return undefined
+
+    // Handle numeric string that is actually an Excel serial
+    const numVal = Number(strVal)
+    if (!isNaN(numVal) && isExcelSerial(numVal)) return excelSerialToDate(numVal)
+
     // Try DD.MM.YYYY
-    const dotMatch = value.match(/^(\d{2})\.(\d{2})\.(\d{4})$/)
+    const dotMatch = strVal.match(/^(\d{2})\.(\d{2})\.(\d{4})$/)
     if (dotMatch) return new Date(`${dotMatch[3]}-${dotMatch[2]}-${dotMatch[1]}`)
+
     // Try YYYY-MM-DD
-    const isoMatch = value.match(/^\d{4}-\d{2}-\d{2}/)
-    if (isoMatch) return new Date(value)
+    const isoMatch = strVal.match(/^\d{4}-\d{2}-\d{2}/)
+    if (isoMatch) return new Date(strVal)
+
     // Fallback
-    const d = new Date(value)
+    const d = new Date(strVal)
     return isNaN(d.getTime()) ? undefined : d
   }
 }
