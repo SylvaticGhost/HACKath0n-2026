@@ -1,6 +1,7 @@
 import { Controller, Get, Query } from '@nestjs/common'
-import type { LandRegistryDto, PaginatedList, RealtyRegistryDto } from 'shared'
-import { Result } from 'shared'
+import type { LandRegistryDto, LandSearchDto, PaginatedList, RealtyRegistryDto, RealtySearchDto } from 'shared'
+import { LandSearchSchema, RealtySearchSchema, Result } from 'shared'
+import { ZodValidationPipe } from '../../middleware/zod-validation.pipe'
 import { parsePaginationQuery } from '../../utils/pagination-query'
 import { RegistryService } from './registry.service'
 
@@ -25,6 +26,24 @@ export class RegistryController {
     return Result.success(data)
   }
 
+  @Get('land/search')
+  async searchLand(
+    @Query(new ZodValidationPipe(LandSearchSchema)) params: LandSearchDto,
+    @Query('page') page?: string,
+    @Query('pageSize') pageSize?: string,
+  ): Promise<Result<PaginatedList<LandRegistryDto>>> {
+    const paginationResult = parsePaginationQuery(page, pageSize)
+    if (paginationResult.isFailure()) {
+      return paginationResult.mapFailure<PaginatedList<LandRegistryDto>>()
+    }
+    const data = await this.registryService.searchLand(
+      params,
+      paginationResult.strictValue.page,
+      paginationResult.strictValue.pageSize,
+    )
+    return Result.success(data)
+  }
+
   @Get('realty')
   async getRealtyPaginated(
     @Query('page') page?: string,
@@ -36,6 +55,24 @@ export class RegistryController {
     }
 
     const data = await this.registryService.getRealtyPaginated(
+      paginationResult.strictValue.page,
+      paginationResult.strictValue.pageSize,
+    )
+    return Result.success(data)
+  }
+
+  @Get('realty/search')
+  async searchRealty(
+    @Query(new ZodValidationPipe(RealtySearchSchema)) params: RealtySearchDto,
+    @Query('page') page?: string,
+    @Query('pageSize') pageSize?: string,
+  ): Promise<Result<PaginatedList<RealtyRegistryDto>>> {
+    const paginationResult = parsePaginationQuery(page, pageSize)
+    if (paginationResult.isFailure()) {
+      return paginationResult.mapFailure<PaginatedList<RealtyRegistryDto>>()
+    }
+    const data = await this.registryService.searchRealty(
+      params,
       paginationResult.strictValue.page,
       paginationResult.strictValue.pageSize,
     )

@@ -1,6 +1,14 @@
 import { Injectable } from '@nestjs/common'
 import { InjectEntityManager } from '@nestjs/typeorm'
-import type { LandCrmDto, PaginatedList, RealtyCrmDto, UpdateLandCrmDto, UpdateRealtyCrmDto } from 'shared'
+import type {
+  LandCrmDto,
+  PaginatedList,
+  RealtyCrmDto,
+  UpdateLandCrmDto,
+  UpdateRealtyCrmDto,
+  LandSearchDto,
+  RealtySearchDto,
+} from 'shared'
 import { EntityManager } from 'typeorm'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
@@ -37,6 +45,37 @@ export class CrmService {
 
   async getLandInvalidCount(): Promise<number> {
     return this.landCrmRepository.count({ where: { validationStatus: 'INVALID' } })
+
+  async searchLand(params: LandSearchDto, page: number, pageSize: number): Promise<PaginatedList<LandCrmDto>> {
+    const query = this.entityManager.createQueryBuilder(LandCrm, 'land')
+
+    if (params.cadastralNumber) {
+      query.andWhere('land.cadastralNumber ILIKE :cadastralNumber', {
+        cadastralNumber: `%${params.cadastralNumber}%`,
+      })
+    }
+    if (params.stateTaxId) {
+      query.andWhere('land.stateTaxId ILIKE :stateTaxId', { stateTaxId: `%${params.stateTaxId}%` })
+    }
+    if (params.user) {
+      query.andWhere('land.user ILIKE :user', { user: `%${params.user}%` })
+    }
+    if (params.location) {
+      query.andWhere('land.location ILIKE :location', { location: `%${params.location}%` })
+    }
+
+    const [items, totalItems] = await query
+      .orderBy('land.cadastralNumber', 'ASC')
+      .skip((page - 1) * pageSize)
+      .take(pageSize)
+      .getManyAndCount()
+
+    return {
+      items,
+      totalItems,
+      page,
+      pageSize,
+    }
   }
 
   async getLandById(cadastralNumber: string): Promise<Result<LandCrmDto>> {
@@ -85,6 +124,38 @@ export class CrmService {
   async getRealtyPaginated(page: number, pageSize: number): Promise<PaginatedList<RealtyCrmDto>> {
     const [items, totalItems] = await this.entityManager
       .createQueryBuilder(RealtyCrm, 'realty')
+      .orderBy('realty.stateTaxId', 'ASC')
+      .addOrderBy('realty.ownershipRegistrationDate', 'ASC')
+      .skip((page - 1) * pageSize)
+      .take(pageSize)
+      .getManyAndCount()
+
+    return {
+      items,
+      totalItems,
+      page,
+      pageSize,
+    }
+  }
+
+  async searchRealty(params: RealtySearchDto, page: number, pageSize: number): Promise<PaginatedList<RealtyCrmDto>> {
+    const query = this.entityManager.createQueryBuilder(RealtyCrm, 'realty')
+
+    if (params.stateTaxId) {
+      query.andWhere('realty.stateTaxId ILIKE :stateTaxId', { stateTaxId: `%${params.stateTaxId}%` })
+    }
+    if (params.taxpayerName) {
+      query.andWhere('realty.taxpayerName ILIKE :taxpayerName', {
+        taxpayerName: `%${params.taxpayerName}%`,
+      })
+    }
+    if (params.objectAddress) {
+      query.andWhere('realty.objectAddress ILIKE :objectAddress', {
+        objectAddress: `%${params.objectAddress}%`,
+      })
+    }
+
+    const [items, totalItems] = await query
       .orderBy('realty.stateTaxId', 'ASC')
       .addOrderBy('realty.ownershipRegistrationDate', 'ASC')
       .skip((page - 1) * pageSize)
