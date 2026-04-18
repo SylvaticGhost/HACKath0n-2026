@@ -20,9 +20,9 @@ export interface ProcessedLandRecord extends Partial<LandRegistry> {
 // ─── Mapping dictionaries ─────────────────────────────────────────────────────
 
 const RIGHT_TYPE_MAP: Record<string, string> = {
-  власність: 'OWNERSHIP',
-  'право власності': 'OWNERSHIP',
-  оренда: 'LEASE',
+  власність: 'Власність',
+  'право власності': 'Власність',
+  оренда: 'Оренда',
 }
 
 // Keys are lowercased for case-insensitive lookup
@@ -36,7 +36,11 @@ const EMPTY_VALUES = new Set(['', '-', 'n/a', 'н/д', 'null', 'none'])
 
 function normalizeString(value: unknown): string | null {
   if (value === undefined || value === null) return null
-  const s = String(value).trim().replace(/\s+/g, ' ')
+  const s = String(value)
+    .trim()
+    .replace(/\s*[^а-яА-ЯіїєёІЇЄЁa-zA-Z0-9\s.,()'/:]+/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
   if (EMPTY_VALUES.has(s.toLowerCase())) return null
   return s || null
 }
@@ -68,7 +72,7 @@ function normalizeRightType(value: unknown): string | null {
   if (!s) return null
   const mapped = RIGHT_TYPE_MAP[s.toLowerCase()]
   // Anything not in the map → USAGE per spec
-  return mapped ?? 'USAGE'
+  return mapped ?? 'Користування'
 }
 
 function normalizeRightSubtype(value: unknown): string | null {

@@ -44,7 +44,11 @@ function isNullValue(s: string): boolean {
 
 function normalizeString(value: unknown): string | null {
   if (value === undefined || value === null) return null
-  const s = String(value).trim().replace(/\s+/g, ' ')
+  const s = String(value)
+    .trim()
+    .replace(/\s*[^а-яА-ЯіїєёІЇЄЁa-zA-Z0-9\s.,()'/:]+/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
   return isNullValue(s) ? null : s || null
 }
 
