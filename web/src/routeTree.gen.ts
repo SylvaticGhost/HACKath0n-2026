@@ -11,6 +11,9 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as AppRouteRouteImport } from './routes/_app/route'
 import { Route as AppIndexRouteImport } from './routes/_app/index'
+import { Route as AppUpload_fileRouteImport } from './routes/_app/upload_file'
+import { Route as AppTableRouteImport } from './routes/_app/table'
+import { Route as AppRequestsRouteImport } from './routes/_app/requests'
 
 const AppRouteRoute = AppRouteRouteImport.update({
   id: '/_app',
@@ -21,24 +24,48 @@ const AppIndexRoute = AppIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AppRouteRoute,
 } as any)
+const AppUpload_fileRoute = AppUpload_fileRouteImport.update({
+  id: '/upload_file',
+  path: '/upload_file',
+  getParentRoute: () => AppRouteRoute,
+} as any)
+const AppTableRoute = AppTableRouteImport.update({
+  id: '/table',
+  path: '/table',
+  getParentRoute: () => AppRouteRoute,
+} as any)
+const AppRequestsRoute = AppRequestsRouteImport.update({
+  id: '/requests',
+  path: '/requests',
+  getParentRoute: () => AppRouteRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
+  '/requests': typeof AppRequestsRoute
+  '/table': typeof AppTableRoute
+  '/upload_file': typeof AppUpload_fileRoute
 }
 export interface FileRoutesByTo {
+  '/requests': typeof AppRequestsRoute
+  '/table': typeof AppTableRoute
+  '/upload_file': typeof AppUpload_fileRoute
   '/': typeof AppIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_app': typeof AppRouteRouteWithChildren
+  '/_app/requests': typeof AppRequestsRoute
+  '/_app/table': typeof AppTableRoute
+  '/_app/upload_file': typeof AppUpload_fileRoute
   '/_app/': typeof AppIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths: '/' | '/requests' | '/table' | '/upload_file'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/_app' | '/_app/'
+  to: '/requests' | '/table' | '/upload_file' | '/'
+  id: '__root__' | '/_app' | '/_app/requests' | '/_app/table' | '/_app/upload_file' | '/_app/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -61,14 +88,41 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppIndexRouteImport
       parentRoute: typeof AppRouteRoute
     }
+    '/_app/upload_file': {
+      id: '/_app/upload_file'
+      path: '/upload_file'
+      fullPath: '/upload_file'
+      preLoaderRoute: typeof AppUpload_fileRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
+    '/_app/table': {
+      id: '/_app/table'
+      path: '/table'
+      fullPath: '/table'
+      preLoaderRoute: typeof AppTableRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
+    '/_app/requests': {
+      id: '/_app/requests'
+      path: '/requests'
+      fullPath: '/requests'
+      preLoaderRoute: typeof AppRequestsRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
   }
 }
 
 interface AppRouteRouteChildren {
+  AppRequestsRoute: typeof AppRequestsRoute
+  AppTableRoute: typeof AppTableRoute
+  AppUpload_fileRoute: typeof AppUpload_fileRoute
   AppIndexRoute: typeof AppIndexRoute
 }
 
 const AppRouteRouteChildren: AppRouteRouteChildren = {
+  AppRequestsRoute: AppRequestsRoute,
+  AppTableRoute: AppTableRoute,
+  AppUpload_fileRoute: AppUpload_fileRoute,
   AppIndexRoute: AppIndexRoute,
 }
 

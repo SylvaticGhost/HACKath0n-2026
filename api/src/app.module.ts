@@ -7,7 +7,8 @@ import { join } from 'path'
 import { AppController } from './app.controller'
 import { APP_INTERCEPTOR } from '@nestjs/core'
 import { ResultInterceptor } from './middleware/result.interceptor'
-import { UploadModule } from './modules/upload/upload.module'
+import { CrmModule } from './modules/crm/crm.module'
+import { RegistryModule } from './modules/registry/registry.module'
 
 @Module({
   imports: [
@@ -19,7 +20,8 @@ import { UploadModule } from './modules/upload/upload.module'
       rootPath: join(__dirname, '..', 'client'),
       exclude: ['/api/{*splat}'],
     }),
-    UploadModule,
+    CrmModule,
+    RegistryModule,
   ],
   providers: [
     {

@@ -21,19 +21,19 @@ export class LandRegistry {
   landPurposeType: string
 
   @Column({ type: 'numeric', precision: 12, scale: 4 })
-  square: number
+  square: number // hectares
 
   @Column({ type: 'numeric', precision: 15, scale: 2 })
   estimateValue: number
 
   @Column({ type: 'varchar', length: 10 })
-  stateTaxId: string
+  stateTaxId: string // ЄДРПОУ — 8–10 digits
 
   @Column({ type: 'varchar', length: 255 })
   user: string
 
   @Column({ type: 'numeric', precision: 5, scale: 4, nullable: true })
-  ownerPart?: number
+  ownerPart?: number // fraction of ownership, e.g. 0.5000
 
   @Column({ type: 'date' })
   stateRegistrationDate: Date

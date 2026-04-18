@@ -11,9 +11,9 @@ const MotionAnchor = React.forwardRef<HTMLAnchorElement, React.ComponentProps<ty
 const MotionLink = createLink(MotionAnchor)
 
 const menuItems = [
-  { label: 'Drag & Drop', href: '/drag-and-drop', icon: GripVertical },
-  { label: 'Таблиця', href: '/table', icon: Table2 },
-  { label: 'Реквести', href: '/requests', icon: Send },
+  { label: 'Upload file', href: '/upload_file', icon: GripVertical },
+  { label: 'Table', href: '/table', icon: Table2 },
+  { label: 'Requests', href: '/requests', icon: Send },
 ]
 
 export default function NavBar() {
