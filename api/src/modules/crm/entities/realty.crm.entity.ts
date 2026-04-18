@@ -1,5 +1,4 @@
 import { Column, Entity, PrimaryColumn } from 'typeorm'
-import type { ValidationError, ValidationStatus } from '../../upload/land-processor'
 
 @Entity({ name: 'realty', schema: 'crm' })
 export class RealtyCrm {
@@ -29,10 +28,4 @@ export class RealtyCrm {
 
   @Column({ name: 'ownership_share', type: 'numeric', precision: 5, scale: 4, nullable: true })
   ownershipShare?: number
-
-  @Column({ name: 'validation_status', type: 'varchar', length: 10, nullable: true })
-  validationStatus?: ValidationStatus
-
-  @Column({ name: 'validation_errors', type: 'text', array: true, nullable: true })
-  validationErrors?: ValidationError[]
 }

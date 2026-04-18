@@ -1,13 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
 import { createFileRoute } from '@tanstack/react-router'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { AlertCircle, Building2, CheckCircle2, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Building2, ChevronLeft, ChevronRight } from 'lucide-react'
 
 import { fetchApi } from '@/shared/api/client'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 
 export const Route = createFileRoute('/_app/local-registry/realty')({
   component: LocalRegistryRealtyPage,
@@ -25,17 +24,6 @@ interface RealtyCrmItem {
   totalArea: number | null
   jointOwnershipType?: string | null
   ownershipShare?: number | null
-  validationStatus?: 'VALID' | 'INVALID' | null
-  validationErrors?: string[] | null
-}
-
-const ERROR_LABELS: Record<string, string> = {
-  MISSING_CADASTRAL: 'Відсутній кадастровий номер',
-  INVALID_CADASTRAL_FORMAT: 'Невірний формат кадастрового номера',
-  MISSING_OWNER: 'Відсутній власник',
-  MISSING_RIGHT_TYPE: 'Відсутній тип права',
-  MISSING_DATE: 'Відсутня дата реєстрації',
-  MISSING_DOCUMENT: 'Відсутній номер документа',
 }
 
 interface PaginatedList<T> {
@@ -179,11 +167,6 @@ function LocalRegistryRealtyPage() {
     queryFn: () => fetchApi<PaginatedList<RealtyCrmItem>>(`/crm/realty?page=${page}&pageSize=${PAGE_SIZE}`),
   })
 
-  const { data: totalInvalidCount } = useQuery({
-    queryKey: ['crm', 'realty', 'invalid-count'],
-    queryFn: () => fetchApi<number>('/crm/realty/invalid-count'),
-  })
-
   const updateMutation = useMutation({
     mutationFn: (item: RealtyCrmItem) =>
       fetchApi(
@@ -245,157 +228,115 @@ function LocalRegistryRealtyPage() {
   }
 
   return (
-    <TooltipProvider delayDuration={200}>
-      <div className="flex h-full flex-col gap-4">
-        <div className="flex items-center gap-2">
-          <Building2 className="size-5 text-muted-foreground" />
-          <h1 className="text-xl font-semibold">Local Registry — Realty (CRM)</h1>
-          <span className="ml-auto flex items-center gap-3 text-sm text-muted-foreground">
-            {typeof totalInvalidCount === 'number' && totalInvalidCount > 0 && (
-              <span className="flex items-center gap-1 font-medium text-destructive">
-                <AlertCircle className="size-4" />
-                {totalInvalidCount.toLocaleString('en-US')} invalid
-              </span>
-            )}
-            {data && <>Total: {data.totalItems.toLocaleString('en-US')} records</>}
+    <div className="flex h-full flex-col gap-4">
+      <div className="flex items-center gap-2">
+        <Building2 className="size-5 text-muted-foreground" />
+        <h1 className="text-xl font-semibold">Local Registry — Realty (CRM)</h1>
+        {data && (
+          <span className="ml-auto text-sm text-muted-foreground">
+            Total: {data.totalItems.toLocaleString('en-US')} records
           </span>
-        </div>
-
-        <div className="min-h-0 flex-1 overflow-auto rounded-lg border bg-card">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-8" />
-                <TableHead>Tax ID</TableHead>
-                <TableHead>Taxpayer</TableHead>
-                <TableHead>Object Type</TableHead>
-                <TableHead>Address</TableHead>
-                <TableHead className="text-right">Area (m²)</TableHead>
-                <TableHead>Registration Date</TableHead>
-                <TableHead>Termination Date</TableHead>
-                <TableHead>Joint Ownership</TableHead>
-                <TableHead className="text-right">Share</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoading &&
-                Array.from({ length: 10 }).map((_, i) => (
-                  <TableRow key={i}>
-                    {Array.from({ length: 10 }).map((_, j) => (
-                      <TableCell key={j}>
-                        <Skeleton className="h-4 w-full" />
-                      </TableCell>
-                    ))}
-                  </TableRow>
-                ))}
-
-              {isError && (
-                <TableRow>
-                  <TableCell colSpan={10} className="py-12 text-center text-sm text-destructive">
-                    Failed to load data
-                  </TableCell>
-                </TableRow>
-              )}
-
-              {data?.items.length === 0 && (
-                <TableRow>
-                  <TableCell colSpan={10} className="py-12 text-center text-sm text-muted-foreground">
-                    No records found
-                  </TableCell>
-                </TableRow>
-              )}
-
-              {data?.items.map((item, idx) => {
-                const isInvalid = item.validationStatus === 'INVALID'
-                const errors = item.validationErrors ?? []
-                return (
-                  <TableRow
-                    key={`${rowKey(item)}-${idx}`}
-                    className={isInvalid ? 'bg-destructive/5 hover:bg-destructive/10' : ''}
-                  >
-                    <TableCell className="pr-0">
-                      {isInvalid ? (
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <AlertCircle className="size-4 text-destructive cursor-help" />
-                          </TooltipTrigger>
-                          <TooltipContent side="right" className="max-w-64">
-                            <p className="mb-1 font-semibold text-destructive">Помилки валідації:</p>
-                            <ul className="space-y-0.5 text-xs">
-                              {errors.map((err) => (
-                                <li key={err}>• {ERROR_LABELS[err] ?? err}</li>
-                              ))}
-                            </ul>
-                          </TooltipContent>
-                        </Tooltip>
-                      ) : item.validationStatus === 'VALID' ? (
-                        <CheckCircle2 className="size-4 text-emerald-500" />
-                      ) : null}
-                    </TableCell>
-                    <TableCell className="font-mono text-xs">{item.stateTaxId}</TableCell>
-                    <TableCell className="max-w-44">{cell(item, 'taxpayerName', item.taxpayerName)}</TableCell>
-                    <TableCell>{cell(item, 'objectType', item.objectType)}</TableCell>
-                    <TableCell className="max-w-52">{cell(item, 'objectAddress', item.objectAddress)}</TableCell>
-                    <TableCell className="text-right">
-                      {cell(item, 'totalArea', item.totalArea != null ? item.totalArea.toLocaleString('en-US') : '')}
-                    </TableCell>
-                    <TableCell>{formatDate(item.ownershipRegistrationDate)}</TableCell>
-                    <TableCell>
-                      {cell(item, 'ownershipTerminationDate', formatDate(item.ownershipTerminationDate))}
-                    </TableCell>
-                    <TableCell>{cell(item, 'jointOwnershipType', item.jointOwnershipType ?? '')}</TableCell>
-                    <TableCell className="text-right">
-                      {cell(item, 'ownershipShare', item.ownershipShare != null ? String(item.ownershipShare) : '')}
-                    </TableCell>
-                  </TableRow>
-                )
-              })}
-            </TableBody>
-          </Table>
-        </div>
-
-        {totalPages > 1 && (
-          <div className="flex items-center justify-end gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              disabled={page === 1}
-            >
-              <ChevronLeft className="size-4" />
-            </Button>
-            <span className="text-sm text-muted-foreground">
-              {page} / {totalPages}
-            </span>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-              disabled={page === totalPages}
-            >
-              <ChevronRight className="size-4" />
-            </Button>
-          </div>
-        )}
-
-        {editState && (
-          <FloatingEditor
-            label={FIELD_LABELS[editState.field]}
-            value={editValue}
-            inputType={
-              DATE_FIELDS.includes(editState.field)
-                ? 'date'
-                : NUMBER_FIELDS.includes(editState.field)
-                  ? 'number'
-                  : 'text'
-            }
-            anchorRect={editState.anchorRect}
-            onChange={setEditValue}
-            onCommit={commitEdit}
-            onCancel={cancelEdit}
-          />
         )}
       </div>
-    </TooltipProvider>
+
+      <div className="min-h-0 flex-1 overflow-auto rounded-lg border bg-card">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Tax ID</TableHead>
+              <TableHead>Taxpayer</TableHead>
+              <TableHead>Object Type</TableHead>
+              <TableHead>Address</TableHead>
+              <TableHead className="text-right">Area (m²)</TableHead>
+              <TableHead>Registration Date</TableHead>
+              <TableHead>Termination Date</TableHead>
+              <TableHead>Joint Ownership</TableHead>
+              <TableHead className="text-right">Share</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {isLoading &&
+              Array.from({ length: 10 }).map((_, i) => (
+                <TableRow key={i}>
+                  {Array.from({ length: 9 }).map((_, j) => (
+                    <TableCell key={j}>
+                      <Skeleton className="h-4 w-full" />
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))}
+
+            {isError && (
+              <TableRow>
+                <TableCell colSpan={9} className="py-12 text-center text-sm text-destructive">
+                  Failed to load data
+                </TableCell>
+              </TableRow>
+            )}
+
+            {data?.items.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={9} className="py-12 text-center text-sm text-muted-foreground">
+                  No records found
+                </TableCell>
+              </TableRow>
+            )}
+
+            {data?.items.map((item, idx) => (
+              <TableRow key={`${rowKey(item)}-${idx}`}>
+                <TableCell className="font-mono text-xs">{item.stateTaxId}</TableCell>
+                <TableCell className="max-w-44">{cell(item, 'taxpayerName', item.taxpayerName)}</TableCell>
+                <TableCell>{cell(item, 'objectType', item.objectType)}</TableCell>
+                <TableCell className="max-w-52">{cell(item, 'objectAddress', item.objectAddress)}</TableCell>
+                <TableCell className="text-right">
+                  {cell(item, 'totalArea', item.totalArea != null ? item.totalArea.toLocaleString('en-US') : '')}
+                </TableCell>
+                <TableCell>{formatDate(item.ownershipRegistrationDate)}</TableCell>
+                <TableCell>
+                  {cell(item, 'ownershipTerminationDate', formatDate(item.ownershipTerminationDate))}
+                </TableCell>
+                <TableCell>{cell(item, 'jointOwnershipType', item.jointOwnershipType ?? '')}</TableCell>
+                <TableCell className="text-right">
+                  {cell(item, 'ownershipShare', item.ownershipShare != null ? String(item.ownershipShare) : '')}
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+
+      {totalPages > 1 && (
+        <div className="flex items-center justify-end gap-2">
+          <Button variant="outline" size="sm" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1}>
+            <ChevronLeft className="size-4" />
+          </Button>
+          <span className="text-sm text-muted-foreground">
+            {page} / {totalPages}
+          </span>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+            disabled={page === totalPages}
+          >
+            <ChevronRight className="size-4" />
+          </Button>
+        </div>
+      )}
+
+      {editState && (
+        <FloatingEditor
+          label={FIELD_LABELS[editState.field]}
+          value={editValue}
+          inputType={
+            DATE_FIELDS.includes(editState.field) ? 'date' : NUMBER_FIELDS.includes(editState.field) ? 'number' : 'text'
+          }
+          anchorRect={editState.anchorRect}
+          onChange={setEditValue}
+          onCommit={commitEdit}
+          onCancel={cancelEdit}
+        />
+      )}
+    </div>
   )
 }

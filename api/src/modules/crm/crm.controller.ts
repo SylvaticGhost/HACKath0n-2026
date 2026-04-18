@@ -44,11 +44,6 @@ export class CrmController {
     return Result.success(data)
   }
 
-  @Get('land/invalid-count')
-  async getLandInvalidCount(): Promise<Result<number>> {
-    const count = await this.crmService.getLandInvalidCount()
-    return Result.success(count)
-
   @Get('land/search')
   async searchLand(
     @Query(new ZodValidationPipe(LandSearchSchema)) params: LandSearchDto,
@@ -109,11 +104,6 @@ export class CrmController {
     )
     return Result.success(data)
   }
-
-  @Get('realty/invalid-count')
-  async getRealtyInvalidCount(): Promise<Result<number>> {
-    const count = await this.crmService.getRealtyInvalidCount()
-    return Result.success(count)
 
   @Get('realty/search')
   async searchRealty(
