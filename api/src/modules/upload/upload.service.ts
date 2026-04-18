@@ -8,6 +8,8 @@ import { LandRegistry } from '../registry/entities/land.registry.entity'
 import { RealtyRegistry } from '../registry/entities/realty.registry.entity'
 import { LandCrm } from '../crm/entities/land.crm.entity'
 import { RealtyCrm } from '../crm/entities/realty.crm.entity'
+import { processRecords, ProcessedLandRecord } from './land-processor'
+import { processRealtyRecords, ProcessedRealtyRecord } from './realty-processor'
 
 export interface UploadStats {
   total: number
@@ -116,16 +118,19 @@ export class UploadService {
         errorDetails: [],
       }
 
-      const records: Partial<LandRegistry>[] = []
-      for (const row of rows) {
-        const record = this.mapToLandRecord(row)
-        if (!record.cadastralNumber) {
+      // Normalize + validate + deduplicate, then apply original routing logic
+      const rawRecords = rows.map((row) => this.mapToLandRecord(row))
+      const processed: ProcessedLandRecord[] = processRecords(rawRecords)
+      stats.total = processed.length
+
+      const records = processed.filter((r) => {
+        if (!r.cadastralNumber) {
           stats.errors++
-          stats.errorDetails.push(`Row missing cadastralNumber`)
-          continue
+          stats.errorDetails.push(`Row missing cadastralNumber: ${r.validationErrors.join(', ')}`)
+          return false
         }
-        records.push(record)
-      }
+        return true
+      })
 
       if (records.length === 0) return Result.success(stats)
 
@@ -139,13 +144,13 @@ export class UploadService {
       const existingSet = new Set(existing.map((e) => e.cadastralNumber))
 
       const toRegistry = records.filter((r) => !existingSet.has(r.cadastralNumber!))
+      // Duplicates go to CRM and carry validationStatus + validationErrors
       const toCrm = records.filter((r) => existingSet.has(r.cadastralNumber!))
 
-      // Bulk insert in chunks of 500
       const CHUNK = 500
       for (let i = 0; i < toRegistry.length; i += CHUNK) {
         try {
-          await this.landRegistryRepo.insert(toRegistry.slice(i, i + CHUNK) as LandRegistry[])
+          await this.landRegistryRepo.insert(toRegistry.slice(i, i + CHUNK) as unknown as LandRegistry[])
           stats.insertedToRegistry += Math.min(CHUNK, toRegistry.length - i)
         } catch (err: any) {
           stats.errors++
@@ -180,16 +185,19 @@ export class UploadService {
         errorDetails: [],
       }
 
-      const records: Partial<RealtyRegistry>[] = []
-      for (const row of rows) {
-        const record = this.mapToRealtyRecord(row)
-        if (!record.stateTaxId || !record.ownershipRegistrationDate) {
+      // Normalize + validate + deduplicate
+      const rawRecords = rows.map((row) => this.mapToRealtyRecord(row))
+      const processed: ProcessedRealtyRecord[] = processRealtyRecords(rawRecords)
+      stats.total = processed.length
+
+      const records = processed.filter((r) => {
+        if (!r.stateTaxId || !r.ownershipRegistrationDate) {
           stats.errors++
-          stats.errorDetails.push(`Row missing required fields (stateTaxId/ownershipRegistrationDate)`)
-          continue
+          stats.errorDetails.push(`Row missing required fields: ${r.validationErrors.join(', ')}`)
+          return false
         }
-        records.push(record)
-      }
+        return true
+      })
 
       if (records.length === 0) return Result.success(stats)
 
@@ -208,7 +216,7 @@ export class UploadService {
       const CHUNK = 500
       for (let i = 0; i < toRegistry.length; i += CHUNK) {
         try {
-          await this.realtyRegistryRepo.insert(toRegistry.slice(i, i + CHUNK) as RealtyRegistry[])
+          await this.realtyRegistryRepo.insert(toRegistry.slice(i, i + CHUNK) as unknown as RealtyRegistry[])
           stats.insertedToRegistry += Math.min(CHUNK, toRegistry.length - i)
         } catch (err: any) {
           stats.errors++
