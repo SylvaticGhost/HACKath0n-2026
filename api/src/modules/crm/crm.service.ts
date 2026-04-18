@@ -1,4 +1,7 @@
 import { Injectable } from '@nestjs/common'
+import { InjectEntityManager } from '@nestjs/typeorm'
+import type { LandCrmDto, PaginatedList, RealtyCrmDto } from 'shared'
+import { EntityManager } from 'typeorm'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 import { RealtyCrm } from './entities/realty.crm.entity'
@@ -8,11 +11,44 @@ import { Result } from 'shared'
 @Injectable()
 export class CrmService {
   constructor(
+    @InjectEntityManager()
+    private readonly entityManager: EntityManager,
     @InjectRepository(RealtyCrm)
     private readonly realtyCrmRepository: Repository<RealtyCrm>,
-    @InjectRepository(LandCrm)
-    private readonly landCrmRepository: Repository<LandCrm>,
   ) {}
+
+  async getLandPaginated(page: number, pageSize: number): Promise<PaginatedList<LandCrmDto>> {
+    const [items, totalItems] = await this.entityManager
+      .createQueryBuilder(LandCrm, 'land')
+      .orderBy('land.cadastralNumber', 'ASC')
+      .skip((page - 1) * pageSize)
+      .take(pageSize)
+      .getManyAndCount()
+
+    return {
+      items,
+      totalItems,
+      page,
+      pageSize,
+    }
+  }
+
+  async getRealtyPaginated(page: number, pageSize: number): Promise<PaginatedList<RealtyCrmDto>> {
+    const [items, totalItems] = await this.entityManager
+      .createQueryBuilder(RealtyCrm, 'realty')
+      .orderBy('realty.stateTaxId', 'ASC')
+      .addOrderBy('realty.ownershipRegistrationDate', 'ASC')
+      .skip((page - 1) * pageSize)
+      .take(pageSize)
+      .getManyAndCount()
+
+    return {
+      items,
+      totalItems,
+      page,
+      pageSize,
+    }
+  }
 
   async clearData(): Promise<Result<null>> {
     try {
