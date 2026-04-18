@@ -3,7 +3,7 @@ CREATE SCHEMA IF NOT EXISTS crm;
 CREATE TABLE IF NOT EXISTS crm.land (
   cadastral_number          VARCHAR(22)        PRIMARY KEY,
   koatuu                    VARCHAR(10)        NOT NULL,
-  ownership_type            VARCHAR(100)       NOT NULL,
+  ownership_type            text       NOT NULL,
   intended_purpose          TEXT               NOT NULL,
   location                  TEXT               NOT NULL,
   land_purpose_type         VARCHAR(255)       NOT NULL,
@@ -13,10 +13,10 @@ CREATE TABLE IF NOT EXISTS crm.land (
   "user"                    VARCHAR(255)       NOT NULL,
   owner_part                NUMERIC(5, 4),
   state_registration_date   DATE               NOT NULL,
-  ownership_registration_id VARCHAR(100)       NOT NULL,
+  ownership_registration_id text       NOT NULL,
   registrator               VARCHAR(255)       NOT NULL,
-  type                      VARCHAR(100)       NOT NULL,
-  subtype                   VARCHAR(100)       NOT NULL,
+  type                      text       NOT NULL,
+  subtype                   text       NOT NULL,
   validation_status         VARCHAR(10),
   validation_errors         TEXT[]
 );
