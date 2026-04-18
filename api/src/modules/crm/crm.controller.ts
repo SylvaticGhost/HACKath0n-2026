@@ -2,10 +2,12 @@ import { Body, Controller, Delete, Get, Param, Post, Put, Query, UsePipes } from
 import type {
   LandCrmDto,
   LandSearchDto,
+  LandTaxViewDto,
   LocationSuggestionDto,
   PaginatedList,
   RealtyCrmDto,
   RealtySearchDto,
+  RealtyTaxViewDto,
   UpdateLandCrmDto,
   UpdateRealtyCrmDto,
 } from 'shared'
@@ -72,6 +74,22 @@ export class CrmController {
     }
     const data = await this.crmService.searchLand(
       params,
+      paginationResult.strictValue.page,
+      paginationResult.strictValue.pageSize,
+    )
+    return Result.success(data)
+  }
+
+  @Get('land/tax')
+  async getLandTax(
+    @Query('page') page?: string,
+    @Query('pageSize') pageSize?: string,
+  ): Promise<Result<PaginatedList<LandTaxViewDto>>> {
+    const paginationResult = parsePaginationQuery(page, pageSize)
+    if (paginationResult.isFailure()) {
+      return paginationResult.mapFailure<PaginatedList<LandTaxViewDto>>()
+    }
+    const data = await this.crmService.getLandTax(
       paginationResult.strictValue.page,
       paginationResult.strictValue.pageSize,
     )
@@ -147,6 +165,22 @@ export class CrmController {
     }
     const data = await this.crmService.searchRealty(
       params,
+      paginationResult.strictValue.page,
+      paginationResult.strictValue.pageSize,
+    )
+    return Result.success(data)
+  }
+
+  @Get('realty/tax')
+  async getRealtyTax(
+    @Query('page') page?: string,
+    @Query('pageSize') pageSize?: string,
+  ): Promise<Result<PaginatedList<RealtyTaxViewDto>>> {
+    const paginationResult = parsePaginationQuery(page, pageSize)
+    if (paginationResult.isFailure()) {
+      return paginationResult.mapFailure<PaginatedList<RealtyTaxViewDto>>()
+    }
+    const data = await this.crmService.getRealtyTax(
       paginationResult.strictValue.page,
       paginationResult.strictValue.pageSize,
     )
