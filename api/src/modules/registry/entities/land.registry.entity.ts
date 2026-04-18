@@ -2,51 +2,51 @@ import { Column, Entity, PrimaryColumn } from 'typeorm'
 
 @Entity({ name: 'land', schema: 'registry' })
 export class LandRegistry {
-  @PrimaryColumn({ type: 'varchar', length: 22 })
+  @PrimaryColumn({ name: 'cadastral_number', type: 'varchar', length: 22 })
   cadastralNumber: string
 
-  @Column({ type: 'varchar', length: 10 })
+  @Column({ name: 'koatuu', type: 'varchar', length: 10 })
   koatuu: string
 
-  @Column({ type: 'varchar', length: 100 })
+  @Column({ name: 'ownership_type', type: 'varchar', length: 100 })
   ownershipType: string
 
-  @Column({ type: 'text' })
+  @Column({ name: 'intended_purpose', type: 'text' })
   intendedPurpose: string
 
-  @Column({ type: 'text' })
+  @Column({ name: 'location', type: 'text' })
   location: string
 
-  @Column({ type: 'varchar', length: 255 })
+  @Column({ name: 'land_purpose_type', type: 'varchar', length: 255 })
   landPurposeType: string
 
-  @Column({ type: 'numeric', precision: 12, scale: 4 })
-  square: number // hectares
+  @Column({ name: 'square', type: 'numeric', precision: 12, scale: 4 })
+  square: number
 
-  @Column({ type: 'numeric', precision: 15, scale: 2 })
+  @Column({ name: 'estimate_value', type: 'numeric', precision: 15, scale: 2 })
   estimateValue: number
 
-  @Column({ type: 'varchar', length: 10 })
-  stateTaxId: string // ЄДРПОУ — 8–10 digits
+  @Column({ name: 'state_tax_id', type: 'varchar', length: 10 })
+  stateTaxId: string
 
-  @Column({ type: 'varchar', length: 255 })
+  @Column({ name: 'user', type: 'varchar', length: 255 })
   user: string
 
-  @Column({ type: 'numeric', precision: 5, scale: 4, nullable: true })
-  ownerPart?: number // fraction of ownership, e.g. 0.5000
+  @Column({ name: 'owner_part', type: 'numeric', precision: 5, scale: 4, nullable: true })
+  ownerPart?: number
 
-  @Column({ type: 'date' })
+  @Column({ name: 'state_registration_date', type: 'date' })
   stateRegistrationDate: Date
 
-  @Column({ type: 'varchar', length: 100 })
+  @Column({ name: 'ownership_registration_id', type: 'varchar', length: 100 })
   ownershipRegistrationId: string
 
-  @Column({ type: 'varchar', length: 255 })
+  @Column({ name: 'registrator', type: 'varchar', length: 255 })
   registrator: string
 
-  @Column({ type: 'varchar', length: 100 })
+  @Column({ name: 'type', type: 'varchar', length: 100 })
   type: string
 
-  @Column({ type: 'varchar', length: 100 })
+  @Column({ name: 'subtype', type: 'varchar', length: 100 })
   subtype: string
 }

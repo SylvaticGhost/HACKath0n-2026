@@ -6,20 +6,27 @@ import { UploadService } from './upload.service'
 
 const FILE_FIELD = 'file'
 const MAX_FILE_SIZE = 50 * 1024 * 1024 // 50 MB
+
 const ALLOWED_MIMETYPES = [
   'text/csv',
-  'application/vnd.ms-excel',
-  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
   'application/csv',
   'text/plain',
+  'application/vnd.ms-excel',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  'application/octet-stream',
 ]
 
 const multerOptions = {
   storage: memoryStorage(),
   limits: { fileSize: MAX_FILE_SIZE },
   fileFilter: (_req: any, file: Express.Multer.File, cb: Function) => {
-    const ext = file.originalname.toLowerCase().split('.').pop() ?? ''
-    if (['csv', 'xlsx', 'xls'].includes(ext)) {
+    // Decode originalname in case of latin1 encoding (common with non-ASCII filenames)
+    const name = Buffer.from(file.originalname ?? '', 'latin1').toString('utf8')
+    const ext = name.toLowerCase().split('.').pop() ?? ''
+    const mimeOk = ALLOWED_MIMETYPES.includes(file.mimetype)
+    const extOk = ['csv', 'xlsx', 'xls'].includes(ext)
+    if (mimeOk || extOk) {
+      file.originalname = name
       cb(null, true)
     } else {
       cb(new BadRequestException('Only .csv, .xlsx, .xls files are allowed'), false)

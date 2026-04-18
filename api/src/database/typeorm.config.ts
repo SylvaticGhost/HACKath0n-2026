@@ -1,6 +1,10 @@
 ﻿import { DataSourceOptions } from 'typeorm'
 import * as dotenv from 'dotenv'
 import * as path from 'path'
+import { LandCrm } from '../modules/crm/entities/land.crm.entity'
+import { RealtyCrm } from '../modules/crm/entities/realty.crm.entity'
+import { LandRegistry } from '../modules/registry/entities/land.registry.entity'
+import { RealtyRegistry } from '../modules/registry/entities/realty.registry.entity'
 
 const rootPath = path.resolve(__dirname, '../../../../')
 const envPath = path.join(rootPath, '.env')
