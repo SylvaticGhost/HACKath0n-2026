@@ -15,6 +15,10 @@ import { Route as AppUpload_fileRouteImport } from './routes/_app/upload_file'
 import { Route as AppTableRouteImport } from './routes/_app/table'
 import { Route as AppRequestsRouteImport } from './routes/_app/requests'
 import { Route as AppDragAndDropRouteImport } from './routes/_app/drag-and-drop'
+import { Route as AppLocalRegistryRealtyRouteImport } from './routes/_app/local-registry/realty'
+import { Route as AppLocalRegistryLandRouteImport } from './routes/_app/local-registry/land'
+import { Route as AppGlobalRegistryRealtyRouteImport } from './routes/_app/global-registry/realty'
+import { Route as AppGlobalRegistryLandRouteImport } from './routes/_app/global-registry/land'
 
 const AppRouteRoute = AppRouteRouteImport.update({
   id: '/_app',
@@ -43,6 +47,26 @@ const AppRequestsRoute = AppRequestsRouteImport.update({
 const AppDragAndDropRoute = AppDragAndDropRouteImport.update({
   id: '/drag-and-drop',
   path: '/drag-and-drop',
+  getParentRoute: () => AppRouteRoute,
+} as any)
+const AppLocalRegistryRealtyRoute = AppLocalRegistryRealtyRouteImport.update({
+  id: '/local-registry/realty',
+  path: '/local-registry/realty',
+  getParentRoute: () => AppRouteRoute,
+} as any)
+const AppLocalRegistryLandRoute = AppLocalRegistryLandRouteImport.update({
+  id: '/local-registry/land',
+  path: '/local-registry/land',
+  getParentRoute: () => AppRouteRoute,
+} as any)
+const AppGlobalRegistryRealtyRoute = AppGlobalRegistryRealtyRouteImport.update({
+  id: '/global-registry/realty',
+  path: '/global-registry/realty',
+  getParentRoute: () => AppRouteRoute,
+} as any)
+const AppGlobalRegistryLandRoute = AppGlobalRegistryLandRouteImport.update({
+  id: '/global-registry/land',
+  path: '/global-registry/land',
   getParentRoute: () => AppRouteRoute,
 } as any)
 
@@ -83,10 +107,39 @@ export interface FileRoutesById {
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/drag-and-drop' | '/requests' | '/table' | '/upload_file'
+  fullPaths:
+    | '/'
+    | '/drag-and-drop'
+    | '/requests'
+    | '/table'
+    | '/upload_file'
+    | '/global-registry/land'
+    | '/global-registry/realty'
+    | '/local-registry/land'
+    | '/local-registry/realty'
   fileRoutesByTo: FileRoutesByTo
-  to: '/drag-and-drop' | '/requests' | '/table' | '/upload_file' | '/'
-  id: '__root__' | '/_app' | '/_app/drag-and-drop' | '/_app/requests' | '/_app/table' | '/_app/upload_file' | '/_app/'
+  to:
+    | '/drag-and-drop'
+    | '/requests'
+    | '/table'
+    | '/upload_file'
+    | '/'
+    | '/global-registry/land'
+    | '/global-registry/realty'
+    | '/local-registry/land'
+    | '/local-registry/realty'
+  id:
+    | '__root__'
+    | '/_app'
+    | '/_app/drag-and-drop'
+    | '/_app/requests'
+    | '/_app/table'
+    | '/_app/upload_file'
+    | '/_app/'
+    | '/_app/global-registry/land'
+    | '/_app/global-registry/realty'
+    | '/_app/local-registry/land'
+    | '/_app/local-registry/realty'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -137,6 +190,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppDragAndDropRouteImport
       parentRoute: typeof AppRouteRoute
     }
+    '/_app/local-registry/realty': {
+      id: '/_app/local-registry/realty'
+      path: '/local-registry/realty'
+      fullPath: '/local-registry/realty'
+      preLoaderRoute: typeof AppLocalRegistryRealtyRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
+    '/_app/local-registry/land': {
+      id: '/_app/local-registry/land'
+      path: '/local-registry/land'
+      fullPath: '/local-registry/land'
+      preLoaderRoute: typeof AppLocalRegistryLandRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
+    '/_app/global-registry/realty': {
+      id: '/_app/global-registry/realty'
+      path: '/global-registry/realty'
+      fullPath: '/global-registry/realty'
+      preLoaderRoute: typeof AppGlobalRegistryRealtyRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
+    '/_app/global-registry/land': {
+      id: '/_app/global-registry/land'
+      path: '/global-registry/land'
+      fullPath: '/global-registry/land'
+      preLoaderRoute: typeof AppGlobalRegistryLandRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
   }
 }
 
@@ -164,9 +245,13 @@ const AppRouteRouteChildren: AppRouteRouteChildren = {
   AppLocalRegistryRealtyRoute: AppLocalRegistryRealtyRoute,
 }
 
-const AppRouteRouteWithChildren = AppRouteRoute._addFileChildren(AppRouteRouteChildren)
+const AppRouteRouteWithChildren = AppRouteRoute._addFileChildren(
+  AppRouteRouteChildren,
+)
 
 const rootRouteChildren: RootRouteChildren = {
   AppRouteRoute: AppRouteRouteWithChildren,
 }
-export const routeTree = rootRouteImport._addFileChildren(rootRouteChildren)._addFileTypes<FileRouteTypes>()
+export const routeTree = rootRouteImport
+  ._addFileChildren(rootRouteChildren)
+  ._addFileTypes<FileRouteTypes>()
