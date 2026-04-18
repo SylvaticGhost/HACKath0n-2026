@@ -1,8 +1,9 @@
-import { Controller, Get, Query } from '@nestjs/common'
+import { Controller, Get, Query, Delete } from '@nestjs/common'
 import type { LandCrmDto, PaginatedList, RealtyCrmDto } from 'shared'
 import { Result } from 'shared'
 import { parsePaginationQuery } from '../../utils/pagination-query'
 import { CrmService } from './crm.service'
+import { Result } from 'shared'
 
 @Controller('crm')
 export class CrmController {
@@ -40,5 +41,10 @@ export class CrmController {
       paginationResult.strictValue.pageSize,
     )
     return Result.success(data)
+    }
+  
+  @Delete('data')
+  async clearData(): Promise<Result<null>> {
+    return this.crmService.clearData()
   }
 }

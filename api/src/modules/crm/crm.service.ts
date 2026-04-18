@@ -4,6 +4,11 @@ import type { LandCrmDto, PaginatedList, RealtyCrmDto } from 'shared'
 import { EntityManager } from 'typeorm'
 import { LandCrm } from './entities/land.crm.entity'
 import { RealtyCrm } from './entities/realty.crm.entity'
+import { InjectRepository } from '@nestjs/typeorm'
+import { Repository } from 'typeorm'
+import { RealtyCrm } from './entities/realty.crm.entity'
+import { LandCrm } from './entities/land.crm.entity'
+import { Result } from 'shared'
 
 @Injectable()
 export class CrmService {
@@ -41,7 +46,19 @@ export class CrmService {
       items,
       totalItems,
       page,
-      pageSize,
+      pageSize
+    }
+  }
+
+  async clearData(): Promise<Result<null>> {
+    try {
+      await this.realtyCrmRepository.manager.transaction(async (entityManager) => {
+        await entityManager.getRepository(RealtyCrm).clear()
+        await entityManager.getRepository(LandCrm).clear()
+      })
+      return Result.success<null>(null)
+    } catch (error: unknown) {
+      return Result.internalError<null>(error instanceof Error ? error.message : 'Failed to clear CRM data')
     }
   }
 }
