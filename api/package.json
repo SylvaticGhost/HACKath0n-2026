@@ -43,6 +43,7 @@
     "shared": "*",
     "swagger-ui-express": "^5.0.1",
     "typeorm": "^0.3.28",
+    "xlsx": "^0.18.5",
     "zod": "^3.25.76",
     "zod-to-json-schema": "^3.25.1"
   },

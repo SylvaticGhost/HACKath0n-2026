@@ -26,7 +26,7 @@ export const typeOrmConfig: DataSourceOptions = {
   username: process.env.DB_USER,
   password: password,
   database: process.env.DB_NAME,
-  entities: [LandCrm, RealtyCrm, LandRegistry, RealtyRegistry],
+  entities: [__dirname + '/../modules/**/*.entity{.ts,.js}'],
   synchronize: process.env.DB_SYNC === 'true',
   logging: process.env.NODE_ENV === 'development',
   ssl: sslEnabled ? { rejectUnauthorized } : false,
