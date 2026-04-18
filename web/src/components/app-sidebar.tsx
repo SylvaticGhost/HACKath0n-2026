@@ -1,11 +1,10 @@
 import * as React from 'react'
 import { Link, useRouterState } from '@tanstack/react-router'
 import { useTheme } from 'next-themes'
-import { Building2, ChevronDown, FileUp, Globe2, Landmark, LogOut, MapPinned, Moon, Sun } from 'lucide-react'
+import { FileUp, Globe2, Landmark, LayoutDashboardIcon, LogOut, Moon, Sun } from 'lucide-react'
 
 import { ModeToggle } from '@/components/mode-toggle'
 import { Button } from '@/components/ui/button'
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 import {
   Sidebar,
   SidebarContent,
@@ -17,47 +16,26 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarMenuSub,
-  SidebarMenuSubButton,
-  SidebarMenuSubItem,
   SidebarSeparator,
 } from '@/components/ui/sidebar'
 
 interface NavigationItem {
   label: string
   to: string
+  activePrefix?: string
   icon: React.ComponentType<{ className?: string }>
 }
 
-interface RegistryGroup {
-  label: string
-  icon: React.ComponentType<{ className?: string }>
-  items: NavigationItem[]
-}
-
-const primaryItems: NavigationItem[] = [{ label: 'Upload File', to: '/upload_file', icon: FileUp }]
-
-const registryGroups: RegistryGroup[] = [
-  {
-    label: 'Global Registry',
-    icon: Globe2,
-    items: [
-      { label: 'Land', to: '/global-registry/land', icon: MapPinned },
-      { label: 'Realty', to: '/global-registry/realty', icon: Building2 },
-    ],
-  },
-  {
-    label: 'Local Registry',
-    icon: Landmark,
-    items: [
-      { label: 'Land', to: '/local-registry/land', icon: MapPinned },
-      { label: 'Realty', to: '/local-registry/realty', icon: Building2 },
-    ],
-  },
+const navigationItems: NavigationItem[] = [
+  { label: 'Dashboard', to: '/', icon: LayoutDashboardIcon },
+  { label: 'Global Registry', to: '/global-registry/land', activePrefix: '/global-registry', icon: Globe2 },
+  { label: 'Local Registry', to: '/local-registry/land', activePrefix: '/local-registry', icon: Landmark },
+  { label: 'Upload File', to: '/upload_file', icon: FileUp },
 ]
 
-function isPathActive(pathname: string, to: string) {
-  return pathname === to || pathname.startsWith(`${to}/`)
+function isPathActive(pathname: string, item: NavigationItem) {
+  const prefix = item.activePrefix ?? item.to
+  return pathname === item.to || pathname.startsWith(`${prefix}/`)
 }
 
 export function AppSidebar() {
@@ -94,49 +72,8 @@ export function AppSidebar() {
           <SidebarGroupLabel>Navigation</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu className="gap-2">
-              {registryGroups.map((group) => {
-                const groupActive = group.items.some((item) => isPathActive(pathname, item.to))
-
-                return (
-                  <Collapsible key={group.label} defaultOpen={groupActive} className="group/collapsible">
-                    <SidebarMenuItem>
-                      <CollapsibleTrigger asChild>
-                        <SidebarMenuButton
-                          size="lg"
-                          isActive={groupActive}
-                          tooltip={group.label}
-                          className="group-data-[collapsible=icon]:size-9! group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:gap-0"
-                        >
-                          <group.icon className="size-5 group-data-[collapsible=icon]:size-[18px]" />
-                          <span>{group.label}</span>
-                          <ChevronDown className="ml-auto size-4 transition-transform group-data-[state=open]/collapsible:rotate-180 group-data-[collapsible=icon]:hidden" />
-                        </SidebarMenuButton>
-                      </CollapsibleTrigger>
-
-                      <CollapsibleContent>
-                        <SidebarMenuSub className="border-l-0 pl-3">
-                          {group.items.map((item) => {
-                            const active = isPathActive(pathname, item.to)
-
-                            return (
-                              <SidebarMenuSubItem key={item.to}>
-                                <SidebarMenuSubButton asChild isActive={active} className="h-9 text-[15px]">
-                                  <Link to={item.to}>
-                                    <item.icon className="size-5" />
-                                    <span>{item.label}</span>
-                                  </Link>
-                                </SidebarMenuSubButton>
-                              </SidebarMenuSubItem>
-                            )
-                          })}
-                        </SidebarMenuSub>
-                      </CollapsibleContent>
-                    </SidebarMenuItem>
-                  </Collapsible>
-                )
-              })}
-              {primaryItems.map((item) => {
-                const active = isPathActive(pathname, item.to)
+              {navigationItems.map((item) => {
+                const active = isPathActive(pathname, item)
 
                 return (
                   <SidebarMenuItem key={item.to}>

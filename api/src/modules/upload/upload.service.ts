@@ -8,6 +8,8 @@ import { LandRegistry } from '../registry/entities/land.registry.entity'
 import { RealtyRegistry } from '../registry/entities/realty.registry.entity'
 import { LandCrm } from '../crm/entities/land.crm.entity'
 import { RealtyCrm } from '../crm/entities/realty.crm.entity'
+import { processRecords, ProcessedLandRecord } from './land-processor'
+import { processRealtyRecords, ProcessedRealtyRecord } from './realty-processor'
 
 export interface UploadStats {
   total: number
@@ -68,11 +70,14 @@ const LAND_COLUMN_MAP: Record<string, keyof LandRegistry> = {
 // Ukrainian → English column name mappings for realty records
 const REALTY_COLUMN_MAP: Record<string, keyof RealtyRegistry> = {
   ЄДРПОУ: 'stateTaxId',
+  'Податковий номер ПП': 'stateTaxId',
   stateTaxId: 'stateTaxId',
   'Дата реєстрації права': 'ownershipRegistrationDate',
   'Дата реєстрації': 'ownershipRegistrationDate',
+  'Дата держ. реєстр. права власн': 'ownershipRegistrationDate',
   ownershipRegistrationDate: 'ownershipRegistrationDate',
   Платник: 'taxpayerName',
+  'Назва платника': 'taxpayerName',
   taxpayerName: 'taxpayerName',
   "Тип об'єкта": 'objectType',
   objectType: 'objectType',
@@ -80,13 +85,16 @@ const REALTY_COLUMN_MAP: Record<string, keyof RealtyRegistry> = {
   Адреса: 'objectAddress',
   objectAddress: 'objectAddress',
   'Дата припинення': 'ownershipTerminationDate',
+  'Дата держ. реєстр. прип. права власн': 'ownershipTerminationDate',
   ownershipTerminationDate: 'ownershipTerminationDate',
   'Загальна площа': 'totalArea',
   Площа: 'totalArea',
   totalArea: 'totalArea',
   'Тип спільної власності': 'jointOwnershipType',
+  'Вид спільної власності': 'jointOwnershipType',
   jointOwnershipType: 'jointOwnershipType',
   Частка: 'ownershipShare',
+  'Розмір частки у праві спільної власності': 'ownershipShare',
   ownershipShare: 'ownershipShare',
 }
 
@@ -116,16 +124,19 @@ export class UploadService {
         errorDetails: [],
       }
 
-      const records: Partial<LandRegistry>[] = []
-      for (const row of rows) {
-        const record = this.mapToLandRecord(row)
-        if (!record.cadastralNumber) {
+      // Normalize + validate + deduplicate, then apply original routing logic
+      const rawRecords = rows.map((row) => this.mapToLandRecord(row))
+      const processed: ProcessedLandRecord[] = processRecords(rawRecords)
+      stats.total = processed.length
+
+      const records = processed.filter((r) => {
+        if (!r.cadastralNumber) {
           stats.errors++
-          stats.errorDetails.push(`Row missing cadastralNumber`)
-          continue
+          stats.errorDetails.push(`Row missing cadastralNumber: ${r.validationErrors.join(', ')}`)
+          return false
         }
-        records.push(record)
-      }
+        return true
+      })
 
       if (records.length === 0) return Result.success(stats)
 
@@ -139,14 +150,20 @@ export class UploadService {
       const existingSet = new Set(existing.map((e) => e.cadastralNumber))
 
       const toRegistry = records.filter((r) => !existingSet.has(r.cadastralNumber!))
+      // Duplicates go to CRM and carry validationStatus + validationErrors
       const toCrm = records.filter((r) => existingSet.has(r.cadastralNumber!))
 
-      // Bulk insert in chunks of 500
       const CHUNK = 500
       for (let i = 0; i < toRegistry.length; i += CHUNK) {
         try {
-          await this.landRegistryRepo.insert(toRegistry.slice(i, i + CHUNK) as LandRegistry[])
-          stats.insertedToRegistry += Math.min(CHUNK, toRegistry.length - i)
+          const result = await this.landRegistryRepo
+            .createQueryBuilder()
+            .insert()
+            .into(LandRegistry)
+            .values(toRegistry.slice(i, i + CHUNK) as unknown as LandRegistry[])
+            .orIgnore()
+            .execute()
+          stats.insertedToRegistry += result.identifiers.length
         } catch (err: any) {
           stats.errors++
           stats.errorDetails.push(`Registry insert chunk error: ${err?.message}`)
@@ -180,16 +197,19 @@ export class UploadService {
         errorDetails: [],
       }
 
-      const records: Partial<RealtyRegistry>[] = []
-      for (const row of rows) {
-        const record = this.mapToRealtyRecord(row)
-        if (!record.stateTaxId || !record.ownershipRegistrationDate) {
+      // Normalize + validate + deduplicate
+      const rawRecords = rows.map((row) => this.mapToRealtyRecord(row))
+      const processed: ProcessedRealtyRecord[] = processRealtyRecords(rawRecords)
+      stats.total = processed.length
+
+      const records = processed.filter((r) => {
+        if (!r.stateTaxId || !r.ownershipRegistrationDate) {
           stats.errors++
-          stats.errorDetails.push(`Row missing required fields (stateTaxId/ownershipRegistrationDate)`)
-          continue
+          stats.errorDetails.push(`Row missing required fields: ${r.validationErrors.join(', ')}`)
+          return false
         }
-        records.push(record)
-      }
+        return true
+      })
 
       if (records.length === 0) return Result.success(stats)
 
@@ -200,16 +220,31 @@ export class UploadService {
         .select(['r.stateTaxId', 'r.ownershipRegistrationDate'])
         .where('r.stateTaxId IN (:...ids)', { ids: allIds })
         .getMany()
-      const existingSet = new Set(existing.map((e) => `${e.stateTaxId}_${e.ownershipRegistrationDate}`))
+      const toDateStr = (d: Date | string | undefined): string => {
+        if (d instanceof Date) return isNaN(d.getTime()) ? '' : d.toISOString().slice(0, 10)
+        if (typeof d === 'string') return d.slice(0, 10)
+        return ''
+      }
+      const existingSet = new Set(existing.map((e) => `${e.stateTaxId}_${toDateStr(e.ownershipRegistrationDate)}`))
 
-      const toRegistry = records.filter((r) => !existingSet.has(`${r.stateTaxId}_${r.ownershipRegistrationDate}`))
-      const toCrm = records.filter((r) => existingSet.has(`${r.stateTaxId}_${r.ownershipRegistrationDate}`))
+      const toRegistry = records.filter(
+        (r) => !existingSet.has(`${r.stateTaxId}_${toDateStr(r.ownershipRegistrationDate as Date)}`),
+      )
+      const toCrm = records.filter((r) =>
+        existingSet.has(`${r.stateTaxId}_${toDateStr(r.ownershipRegistrationDate as Date)}`),
+      )
 
       const CHUNK = 500
       for (let i = 0; i < toRegistry.length; i += CHUNK) {
         try {
-          await this.realtyRegistryRepo.insert(toRegistry.slice(i, i + CHUNK) as RealtyRegistry[])
-          stats.insertedToRegistry += Math.min(CHUNK, toRegistry.length - i)
+          const result = await this.realtyRegistryRepo
+            .createQueryBuilder()
+            .insert()
+            .into(RealtyRegistry)
+            .values(toRegistry.slice(i, i + CHUNK) as unknown as RealtyRegistry[])
+            .orIgnore()
+            .execute()
+          stats.insertedToRegistry += result.identifiers.length
         } catch (err: any) {
           stats.errors++
           stats.errorDetails.push(`Registry insert chunk error: ${err?.message}`)

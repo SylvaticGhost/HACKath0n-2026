@@ -16,5 +16,5 @@ export const BaseLandDtoSchema = z.object({
   ownershipRegistrationId: z.string(),
   registrator: z.string(),
   type: z.string(),
-  subtype: z.string(),
+  subtype: z.string().nullable().optional(),
 })
