@@ -8,8 +8,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 
+import { RegistryPage } from '@/components/registry/registry-page'
+
 export const Route = createFileRoute('/_app/local-registry/land')({
-  component: RouteComponent,
+  component: LocalRegistryLandPage,
 })
 
 const PAGE_SIZE = 20

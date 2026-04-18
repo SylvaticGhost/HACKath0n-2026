@@ -1,9 +1,11 @@
 import { createFileRoute } from '@tanstack/react-router'
 
+import { RegistryPage } from '@/components/registry/registry-page'
+
 export const Route = createFileRoute('/_app/global-registry/realty')({
-  component: RouteComponent,
+  component: GlobalRegistryRealtyPage,
 })
 
-function RouteComponent() {
-  return <div>Hello "/_app/global-registry/realty"!</div>
+function GlobalRegistryRealtyPage() {
+  return <RegistryPage scope="Global Registry" entity="Realty" />
 }
