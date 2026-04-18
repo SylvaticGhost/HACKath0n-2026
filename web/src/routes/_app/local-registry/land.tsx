@@ -37,12 +37,12 @@ interface LandCrmItem {
 }
 
 const ERROR_LABELS: Record<string, string> = {
-  MISSING_CADASTRAL: 'Відсутній кадастровий номер',
-  INVALID_CADASTRAL_FORMAT: 'Невірний формат кадастрового номера',
-  MISSING_OWNER: 'Відсутній власник',
-  MISSING_RIGHT_TYPE: 'Відсутній тип права',
-  MISSING_DATE: 'Відсутня дата реєстрації',
-  MISSING_DOCUMENT: 'Відсутній номер документа',
+  MISSING_CADASTRAL: 'Missing cadastral number',
+  INVALID_CADASTRAL_FORMAT: 'Invalid cadastral number format',
+  MISSING_OWNER: 'Missing owner',
+  MISSING_RIGHT_TYPE: 'Missing right type',
+  MISSING_DATE: 'Missing registration date',
+  MISSING_DOCUMENT: 'Missing document number',
 }
 
 interface PaginatedList<T> {
@@ -333,7 +333,7 @@ function LocalRegistryLandPage() {
                             <AlertCircle className="size-4 text-destructive cursor-help" />
                           </TooltipTrigger>
                           <TooltipContent side="right" className="max-w-64">
-                            <p className="mb-1 font-semibold text-destructive">Помилки валідації:</p>
+                            <p className="mb-1 font-semibold text-destructive">Validation errors:</p>
                             <ul className="space-y-0.5 text-xs">
                               {errors.map((err) => (
                                 <li key={err}>• {ERROR_LABELS[err] ?? err}</li>
