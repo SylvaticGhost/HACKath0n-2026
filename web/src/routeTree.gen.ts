@@ -52,6 +52,10 @@ export interface FileRoutesByFullPath {
   '/requests': typeof AppRequestsRoute
   '/table': typeof AppTableRoute
   '/upload_file': typeof AppUpload_fileRoute
+  '/global-registry/land': typeof AppGlobalRegistryLandRoute
+  '/global-registry/realty': typeof AppGlobalRegistryRealtyRoute
+  '/local-registry/land': typeof AppLocalRegistryLandRoute
+  '/local-registry/realty': typeof AppLocalRegistryRealtyRoute
 }
 export interface FileRoutesByTo {
   '/drag-and-drop': typeof AppDragAndDropRoute
@@ -59,6 +63,10 @@ export interface FileRoutesByTo {
   '/table': typeof AppTableRoute
   '/upload_file': typeof AppUpload_fileRoute
   '/': typeof AppIndexRoute
+  '/global-registry/land': typeof AppGlobalRegistryLandRoute
+  '/global-registry/realty': typeof AppGlobalRegistryRealtyRoute
+  '/local-registry/land': typeof AppLocalRegistryLandRoute
+  '/local-registry/realty': typeof AppLocalRegistryRealtyRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -68,20 +76,17 @@ export interface FileRoutesById {
   '/_app/table': typeof AppTableRoute
   '/_app/upload_file': typeof AppUpload_fileRoute
   '/_app/': typeof AppIndexRoute
+  '/_app/global-registry/land': typeof AppGlobalRegistryLandRoute
+  '/_app/global-registry/realty': typeof AppGlobalRegistryRealtyRoute
+  '/_app/local-registry/land': typeof AppLocalRegistryLandRoute
+  '/_app/local-registry/realty': typeof AppLocalRegistryRealtyRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths: '/' | '/drag-and-drop' | '/requests' | '/table' | '/upload_file'
   fileRoutesByTo: FileRoutesByTo
   to: '/drag-and-drop' | '/requests' | '/table' | '/upload_file' | '/'
-  id:
-    | '__root__'
-    | '/_app'
-    | '/_app/drag-and-drop'
-    | '/_app/requests'
-    | '/_app/table'
-    | '/_app/upload_file'
-    | '/_app/'
+  id: '__root__' | '/_app' | '/_app/drag-and-drop' | '/_app/requests' | '/_app/table' | '/_app/upload_file' | '/_app/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -141,6 +146,10 @@ interface AppRouteRouteChildren {
   AppTableRoute: typeof AppTableRoute
   AppUpload_fileRoute: typeof AppUpload_fileRoute
   AppIndexRoute: typeof AppIndexRoute
+  AppGlobalRegistryLandRoute: typeof AppGlobalRegistryLandRoute
+  AppGlobalRegistryRealtyRoute: typeof AppGlobalRegistryRealtyRoute
+  AppLocalRegistryLandRoute: typeof AppLocalRegistryLandRoute
+  AppLocalRegistryRealtyRoute: typeof AppLocalRegistryRealtyRoute
 }
 
 const AppRouteRouteChildren: AppRouteRouteChildren = {
@@ -149,15 +158,15 @@ const AppRouteRouteChildren: AppRouteRouteChildren = {
   AppTableRoute: AppTableRoute,
   AppUpload_fileRoute: AppUpload_fileRoute,
   AppIndexRoute: AppIndexRoute,
+  AppGlobalRegistryLandRoute: AppGlobalRegistryLandRoute,
+  AppGlobalRegistryRealtyRoute: AppGlobalRegistryRealtyRoute,
+  AppLocalRegistryLandRoute: AppLocalRegistryLandRoute,
+  AppLocalRegistryRealtyRoute: AppLocalRegistryRealtyRoute,
 }
 
-const AppRouteRouteWithChildren = AppRouteRoute._addFileChildren(
-  AppRouteRouteChildren,
-)
+const AppRouteRouteWithChildren = AppRouteRoute._addFileChildren(AppRouteRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   AppRouteRoute: AppRouteRouteWithChildren,
 }
-export const routeTree = rootRouteImport
-  ._addFileChildren(rootRouteChildren)
-  ._addFileTypes<FileRouteTypes>()
+export const routeTree = rootRouteImport._addFileChildren(rootRouteChildren)._addFileTypes<FileRouteTypes>()
