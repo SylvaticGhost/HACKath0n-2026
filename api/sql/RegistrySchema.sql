@@ -1,22 +1,22 @@
 CREATE SCHEMA IF NOT EXISTS registry;
 
 CREATE TABLE IF NOT EXISTS registry.land (
-  ownership_registration_id VARCHAR(100)       PRIMARY KEY,
-  cadastral_number          VARCHAR(22),
-  koatuu                    VARCHAR(10),
-  ownership_type            VARCHAR(100),
-  intended_purpose          TEXT,
-  location                  TEXT,
-  land_purpose_type         VARCHAR(255),
-  square                    NUMERIC(12, 4),
-  estimate_value            NUMERIC(15, 2),
-  state_tax_id              VARCHAR(10),
-  "user"                    VARCHAR(255),
+  cadastral_number          VARCHAR(22)        PRIMARY KEY,
+  koatuu                    VARCHAR(10)        NOT NULL,
+  ownership_type            VARCHAR(100)       NOT NULL,
+  intended_purpose          TEXT               NOT NULL,
+  location                  TEXT               NOT NULL,
+  land_purpose_type         VARCHAR(255)       NOT NULL,
+  square                    NUMERIC(12, 4)     NOT NULL,
+  estimate_value            NUMERIC(15, 2)     NOT NULL,
+  state_tax_id              VARCHAR(10)        NOT NULL,
+  "user"                    VARCHAR(255)       NOT NULL,
   owner_part                NUMERIC(5, 4),
-  state_registration_date   DATE,
-  registrator               VARCHAR(255),
-  type                      VARCHAR(100),
-  subtype                   VARCHAR(100)
+  state_registration_date   DATE               NOT NULL,
+  ownership_registration_id VARCHAR(100)       NOT NULL,
+  registrator               VARCHAR(255)       NOT NULL,
+  type                      VARCHAR(100)       NOT NULL,
+  subtype                   VARCHAR(100)       NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS registry.realty (
