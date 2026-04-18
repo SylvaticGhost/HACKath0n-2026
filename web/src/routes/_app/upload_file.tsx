@@ -221,9 +221,7 @@ function UploadFilePage() {
               progress={uploadProgress}
               isComplete={uploadStage === 'complete'}
               message={
-                uploadStage === 'complete'
-                  ? 'Upload simulation complete. You can connect a real API via FormData here.'
-                  : 'Simulating file upload to the server.'
+                uploadStage === 'complete' ? 'Upload simulation complete.' : 'Simulating file upload to the server.'
               }
             />
           )}
