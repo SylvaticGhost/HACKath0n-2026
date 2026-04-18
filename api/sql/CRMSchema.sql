@@ -168,3 +168,124 @@ BEGIN
     RETURN similarity_percent;
 END;
 $$ LANGUAGE plpgsql IMMUTABLE;
+
+
+CREATE OR REPLACE VIEW crm.last_land_status AS
+SELECT DISTINCT ON (cadastral_number)
+    cadastral_number,
+    koatuu,
+    ownership_type,
+    intended_purpose,
+    location,
+    land_purpose_type,
+    square,
+    estimate_value,
+    state_tax_id,
+    "user",
+    owner_part,
+    state_registration_date,
+    ownership_registration_id,
+    registrator,
+    type,
+    subtype
+FROM registry.land  -- Використовуємо таблицю, де лежить вся історія
+ORDER BY cadastral_number, state_registration_date DESC, ownership_registration_id DESC;
+
+-- 1. Створюємо індекси для швидкого пошуку по ІПН/ЄДРПОУ
+CREATE INDEX idx_crm_realty_tax_id ON crm.realty (state_tax_id);
+CREATE INDEX idx_registry_land_tax_id ON registry.land (state_tax_id);
+
+-- 2. Створюємо GIN-індекси для швидкого нечіткого пошуку тексту адрес
+CREATE INDEX idx_crm_realty_address_trgm ON crm.realty USING GIN (object_address gin_trgm_ops);
+CREATE INDEX idx_registry_land_location_trgm ON registry.land USING GIN (location gin_trgm_ops);
+
+
+CREATE OR REPLACE FUNCTION crm.clean_address(raw_address TEXT)
+RETURNS TEXT AS $$
+DECLARE
+    cleaned TEXT;
+BEGIN
+    IF raw_address IS NULL THEN RETURN NULL; END IF;
+
+    -- 1. Переводимо в нижній регістр
+    cleaned := LOWER(raw_address);
+
+    -- 2. Видаляємо пунктуацію (коми, крапки, дефіси, лапки) і замінюємо на пробіли
+    cleaned := REGEXP_REPLACE(cleaned, '[,.\-"'']', ' ', 'g');
+
+    -- 3. Видаляємо типові слова (використовуємо \y для позначення меж цілих слів, щоб не обрізати частину назви)
+    -- Додано 'львівська' та 'область', оскільки вони є у всіх записах і не несуть унікальної цінності
+    cleaned := REGEXP_REPLACE(cleaned, '\y(львівська|область|обл|район|місто|м|село|с|смт|вулиця|вул|будинок|буд|квартира|кв|приміщення|прим)\y', ' ', 'g');
+
+    -- 4. Видаляємо множинні пробіли, які утворилися після видалення слів
+    cleaned := REGEXP_REPLACE(cleaned, '\s+', ' ', 'g');
+
+    RETURN TRIM(cleaned);
+END;
+$$ LANGUAGE plpgsql IMMUTABLE;
+
+
+CREATE OR REPLACE VIEW crm.v_land_realty_mapping AS
+
+WITH target_land AS (
+    -- Фільтруємо лише ділянки з вулицями
+    SELECT
+        cadastral_number,
+        location AS land_address,
+        state_tax_id AS land_tax_id,
+        crm.clean_address(location) AS cln,
+        SUBSTRING(location FROM '\d+') AS hn
+    FROM crm.land
+    WHERE location ~* '(вул|пров|просп|площ|бульв|ш\.)'
+),
+prepared_realty AS (
+    -- Підготовка нерухомості
+    SELECT
+        object_address AS realty_address,
+        state_tax_id AS realty_tax_id,
+        crm.clean_address(object_address) AS cln,
+        SUBSTRING(object_address FROM '\d+') AS hn
+    FROM crm.realty
+),
+
+-- 1. ЗБИРАЄМО ВСІ МОЖЛИВІ ЗБІГИ (Без обмежень)
+all_matches AS (
+    -- Стратегія 1: Збіг по ІПН (Найвищий пріоритет - 100 балів)
+    SELECT l.cadastral_number, r.realty_address, 100 AS score, 'Ідеальний збіг (ІПН)' AS method
+    FROM target_land l JOIN prepared_realty r ON l.land_tax_id = r.realty_tax_id
+
+    UNION ALL
+
+    -- Стратегія 2: Точний збіг адрес (80 балів)
+    SELECT l.cadastral_number, r.realty_address, 80 AS score, 'Точний збіг за Адресою (Різні власники)' AS method
+    FROM target_land l JOIN prepared_realty r ON l.cln = r.cln
+
+    UNION ALL
+
+    -- Стратегія 3: Жадібний пошук (60 балів) - Тільки в межах однакового номера будинку
+    SELECT l.cadastral_number, r.realty_address, 60 AS score, 'Ймовірний збіг (Один будинок + схожий текст)' AS method
+    FROM target_land l JOIN prepared_realty r ON l.hn = r.hn AND l.hn IS NOT NULL
+    WHERE r.cln <% l.cln
+),
+
+-- 2. ВІДБИРАЄМО НАЙКРАЩИЙ ЗБІГ ДЛЯ КОЖНОЇ ДІЛЯНКИ
+best_matches AS (
+    SELECT DISTINCT ON (cadastral_number) *
+    FROM all_matches
+    -- Сортуємо так, щоб нагору сплив збіг з найбільшим балом
+    ORDER BY cadastral_number, score DESC
+)
+
+-- 3. ФІНАЛЬНИЙ РЕЗУЛЬТАТ (Зберігаємо всі ділянки!)
+SELECT
+    l.cadastral_number,
+    l.land_address,
+    m.realty_address,
+    COALESCE(m.score, 0) AS match_score,
+
+    -- ЯКЩО m.score є NULL, значить ділянка не знайшла збігу ні в одній стратегії
+    COALESCE(m.method, 'АНОМАЛІЯ: Будівлю не знайдено (На ділянці немає зареєстрованої нерухомості)') AS match_reason
+
+FROM target_land l
+-- ВИРІШАЛЬНА ЗМІНА: LEFT JOIN гарантує, що ділянки без нерухомості залишаться в таблиці
+LEFT JOIN best_matches m ON l.cadastral_number = m.cadastral_number;
