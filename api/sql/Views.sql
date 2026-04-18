@@ -108,3 +108,117 @@ FROM crm.normalized_registry_realty r
 FULL OUTER JOIN crm.realty c
     ON r.state_tax_id = c.state_tax_id
     AND r.ownership_registration_date = c.ownership_registration_date;
+
+-- ── Податок на землю (crm schema) ─────────────────────────────────────────────
+CREATE OR REPLACE VIEW crm.v_land_tax AS
+WITH tax_params AS (
+    SELECT
+        cadastral_number,
+        state_tax_id,
+        "user",
+        location,
+        land_purpose_type,
+        ownership_type,
+        square,
+        estimate_value,
+        COALESCE(owner_part, 1) AS owner_part,
+        validation_status,
+        -- Ставка залежно від типу землі та платника
+        CASE
+            WHEN LENGTH(state_tax_id) = 8
+             AND ownership_type ILIKE '%постійн%'         THEN 0.12   -- юрособи, постійне користування
+            WHEN land_purpose_type LIKE '01.%'             THEN 0.01   -- сільгоспугіддя, макс ОТГ
+            WHEN land_purpose_type LIKE '09.%'             THEN 0.001  -- лісові землі
+            ELSE                                                0.03    -- решта (житлова, комерційна тощо)
+        END AS tax_rate
+    FROM crm.land
+)
+SELECT
+    cadastral_number,
+    state_tax_id,
+    CASE WHEN LENGTH(state_tax_id) = 8 THEN 'legal_entity' ELSE 'individual' END AS taxpayer_type,
+    "user",
+    location,
+    land_purpose_type,
+    ownership_type,
+    square,
+    estimate_value                          AS ngo_uah,
+    1.08                                    AS indexation_coefficient,
+    tax_rate,
+    CASE
+        WHEN estimate_value IS NULL OR estimate_value = 0 THEN NULL
+        ELSE ROUND(estimate_value * 1.08 * tax_rate * owner_part, 2)
+    END                                     AS annual_tax_uah,
+    owner_part,
+    validation_status
+FROM tax_params;
+
+-- ── Податок на нерухомість (crm schema) ───────────────────────────────────────
+CREATE OR REPLACE VIEW crm.v_realty_tax AS
+WITH tax_params AS (
+  SELECT
+    state_tax_id,
+    ownership_registration_date,
+    ownership_termination_date,
+    taxpayer_name,
+    object_type,
+    object_address,
+    total_area,
+    -- Частка як пропорція 0..1 (у джерелі "частка" збережена у м², не у відсотках)
+    CASE
+      WHEN ownership_share IS NULL                             THEN 1.0
+      WHEN total_area IS NULL OR total_area = 0                THEN 1.0
+      WHEN ABS(ownership_share - total_area) / total_area < 0.01 THEN 1.0
+      WHEN ownership_share <= total_area                       THEN ownership_share / total_area
+      ELSE                                                          1.0
+      END                                                         AS ownership_share,
+    validation_status,
+    -- Пільгова площа залежно від типу об'єкта
+    CASE
+      WHEN object_type ILIKE '%квартир%'                            THEN 60
+      WHEN object_type ILIKE '%будинок%'
+        OR object_type ILIKE '%будинку%'
+        OR object_type ILIKE '%садов%'
+        OR object_type ILIKE '%дачн%'                               THEN 120
+      ELSE                                                               180
+      END AS exempt_area
+  FROM crm.realty
+  WHERE ownership_termination_date IS NULL
+     OR ownership_termination_date > CURRENT_DATE
+),
+     calc AS (
+       SELECT
+         *,
+         GREATEST(0, total_area - exempt_area) AS taxable_area,
+         8000                                  AS min_wage_uah,   -- МЗП на 01.01.2025 (звіт 2025 → сплата 2026)
+         0.015                                 AS tax_rate,       -- 1.5% від МЗП/м² — макс ОТГ
+         -- Luxury (пп. 266.7.1.1 "ґ" ПКУ): +25 000 грн/рік ФІКСОВАНО за КОЖЕН такий об'єкт
+         -- Квартира >300 м² → +25 000; Будинок >500 м² → +25 000
+         CASE
+           WHEN exempt_area = 60  AND total_area > 300 THEN 25000
+           WHEN exempt_area = 120 AND total_area > 500 THEN 25000
+           ELSE 0
+           END AS luxury_tax_uah
+       FROM tax_params
+     )
+SELECT
+  state_tax_id,
+  ownership_registration_date,
+  ownership_termination_date,
+  taxpayer_name,
+  object_type,
+  object_address,
+  total_area,
+  exempt_area                                               AS exempt_area_m2,
+  taxable_area                                              AS taxable_area_m2,
+  min_wage_uah,
+  tax_rate,
+  ownership_share,
+  ROUND((taxable_area * min_wage_uah * tax_rate * ownership_share)::NUMERIC, 2)
+                                                            AS base_tax_uah,
+  ROUND((luxury_tax_uah * ownership_share)::NUMERIC, 2)     AS luxury_tax_uah,
+  ROUND(
+    ((taxable_area * min_wage_uah * tax_rate + luxury_tax_uah) * ownership_share)::NUMERIC,
+    2)                                                        AS annual_tax_uah,
+  validation_status
+FROM calc;
