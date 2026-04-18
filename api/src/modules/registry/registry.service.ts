@@ -28,6 +28,30 @@ export class RegistryService {
     }
   }
 
+  async getLandInvalidCount(): Promise<number> {
+    return this.entityManager
+      .createQueryBuilder(LandRegistry, 'land')
+      .where(
+        `
+        land.square IS NULL
+        OR land.estimateValue IS NULL
+        OR land.stateRegistrationDate IS NULL
+        OR NULLIF(TRIM(land.cadastralNumber), '') IS NULL
+        OR NULLIF(TRIM(land.koatuu), '') IS NULL
+        OR NULLIF(TRIM(land.ownershipType), '') IS NULL
+        OR NULLIF(TRIM(land.intendedPurpose), '') IS NULL
+        OR NULLIF(TRIM(land.location), '') IS NULL
+        OR NULLIF(TRIM(land.landPurposeType), '') IS NULL
+        OR NULLIF(TRIM(land.stateTaxId), '') IS NULL
+        OR NULLIF(TRIM(land.user), '') IS NULL
+        OR NULLIF(TRIM(land.ownershipRegistrationId), '') IS NULL
+        OR NULLIF(TRIM(land.registrator), '') IS NULL
+        OR NULLIF(TRIM(land.type), '') IS NULL
+        `,
+      )
+      .getCount()
+  }
+
   async suggestLandByLocation(query: string, limit = 10): Promise<LandRegistryDto[]> {
     return this.entityManager
       .createQueryBuilder(LandRegistry, 'land')
@@ -93,6 +117,22 @@ export class RegistryService {
       page,
       pageSize,
     }
+  }
+
+  async getRealtyInvalidCount(): Promise<number> {
+    return this.entityManager
+      .createQueryBuilder(RealtyRegistry, 'realty')
+      .where(
+        `
+        realty.ownershipRegistrationDate IS NULL
+        OR realty.totalArea IS NULL
+        OR NULLIF(TRIM(realty.stateTaxId), '') IS NULL
+        OR NULLIF(TRIM(realty.taxpayerName), '') IS NULL
+        OR NULLIF(TRIM(realty.objectType), '') IS NULL
+        OR NULLIF(TRIM(realty.objectAddress), '') IS NULL
+        `,
+      )
+      .getCount()
   }
 
   async searchRealty(

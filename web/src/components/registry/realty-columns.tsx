@@ -1,8 +1,14 @@
 import type { ColumnDef } from '@tanstack/react-table'
 import type { RealtyRegistryDto } from '../../../../shared/contracts/realty.registry.dto'
 import { format } from 'date-fns'
+import { ValidationStatusIndicator, type ValidationMetadata } from './validation-status-indicator'
 
 export const realtyColumns: ColumnDef<RealtyRegistryDto>[] = [
+  {
+    id: 'validation',
+    header: '',
+    cell: ({ row }) => <ValidationStatusIndicator value={row.original as RealtyRegistryDto & ValidationMetadata} />,
+  },
   {
     accessorKey: 'objectType',
     header: 'Object Type',
