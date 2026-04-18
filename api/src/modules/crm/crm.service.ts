@@ -35,6 +35,10 @@ export class CrmService {
     }
   }
 
+  async getLandInvalidCount(): Promise<number> {
+    return this.landCrmRepository.count({ where: { validationStatus: 'INVALID' } })
+  }
+
   async getLandById(cadastralNumber: string): Promise<Result<LandCrmDto>> {
     const item = await this.landCrmRepository.findOne({ where: { cadastralNumber } })
     if (!item) {
@@ -72,6 +76,10 @@ export class CrmService {
     }
     await this.landCrmRepository.delete({ cadastralNumber })
     return Result.success<null>(null)
+  }
+
+  async getRealtyInvalidCount(): Promise<number> {
+    return this.realtyCrmRepository.count({ where: { validationStatus: 'INVALID' } })
   }
 
   async getRealtyPaginated(page: number, pageSize: number): Promise<PaginatedList<RealtyCrmDto>> {

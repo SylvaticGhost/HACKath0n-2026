@@ -16,7 +16,9 @@ CREATE TABLE IF NOT EXISTS crm.land (
   ownership_registration_id VARCHAR(100)       NOT NULL,
   registrator               VARCHAR(255)       NOT NULL,
   type                      VARCHAR(100)       NOT NULL,
-  subtype                   VARCHAR(100)       NOT NULL
+  subtype                   VARCHAR(100)       NOT NULL,
+  validation_status         VARCHAR(10),
+  validation_errors         TEXT[]
 );
 
 CREATE TABLE IF NOT EXISTS crm.realty (
@@ -29,5 +31,7 @@ CREATE TABLE IF NOT EXISTS crm.realty (
   total_area                      NUMERIC(12, 4)     NOT NULL,
   joint_ownership_type            VARCHAR(100),
   ownership_share                 NUMERIC(5, 4),
+  validation_status               VARCHAR(10),
+  validation_errors               TEXT[],
   PRIMARY KEY (state_tax_id, ownership_registration_date)
 );

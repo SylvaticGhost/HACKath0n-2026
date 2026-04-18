@@ -1,4 +1,5 @@
 import { Column, Entity, PrimaryColumn } from 'typeorm'
+import type { ValidationError, ValidationStatus } from '../../upload/land-processor'
 
 @Entity({ name: 'land', schema: 'crm' })
 export class LandCrm {
@@ -49,4 +50,10 @@ export class LandCrm {
 
   @Column({ name: 'subtype', type: 'varchar', length: 100 })
   subtype: string
+
+  @Column({ name: 'validation_status', type: 'varchar', length: 10, nullable: true })
+  validationStatus?: ValidationStatus
+
+  @Column({ name: 'validation_errors', type: 'text', array: true, nullable: true })
+  validationErrors?: ValidationError[]
 }
