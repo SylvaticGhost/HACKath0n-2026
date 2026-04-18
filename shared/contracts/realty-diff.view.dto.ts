@@ -12,6 +12,7 @@ export const RealtyDiffViewDtoSchema = z.object({
   crmAddress: z.string().nullable(),
   crmTotalArea: z.number().nullable(),
   crmOwnershipShare: z.number().nullable(),
+  similarityScore: z.number().nullable(),
 })
 
 export interface RealtyDiffViewDto extends z.infer<typeof RealtyDiffViewDtoSchema> {}

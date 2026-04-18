@@ -38,4 +38,7 @@ export class RealtyDiffView {
 
   @ViewColumn({ name: 'crm_ownership_share' })
   crmOwnershipShare: number | null
+
+  @ViewColumn({ name: 'similarity_score' })
+  similarityScore: number | null
 }

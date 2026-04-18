@@ -43,6 +43,10 @@ export class CrmService {
     }
   }
 
+  async getLandInvalidCount(): Promise<number> {
+    return this.landCrmRepository.count({ where: { validationStatus: 'INVALID' } })
+  }
+
   async suggestLandByLocation(query: string, limit = 10): Promise<LandCrmDto[]> {
     return this.entityManager
       .createQueryBuilder(LandCrm, 'land')
@@ -130,6 +134,10 @@ export class CrmService {
     }
     await this.landCrmRepository.delete({ cadastralNumber })
     return Result.success<null>(null)
+  }
+
+  async getRealtyInvalidCount(): Promise<number> {
+    return this.realtyCrmRepository.count({ where: { validationStatus: 'INVALID' } })
   }
 
   async getRealtyPaginated(page: number, pageSize: number): Promise<PaginatedList<RealtyCrmDto>> {

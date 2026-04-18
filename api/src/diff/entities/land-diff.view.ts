@@ -41,4 +41,7 @@ export class LandDiffView {
 
   @ViewColumn({ name: 'crm_location' })
   crmLocation: string | null
+
+  @ViewColumn({ name: 'similarity_score' })
+  similarityScore: number | null
 }

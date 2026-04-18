@@ -46,6 +46,12 @@ export class CrmController {
     return Result.success(data)
   }
 
+  @Get('land/invalid-count')
+  async getLandInvalidCount(): Promise<Result<number>> {
+    const count = await this.crmService.getLandInvalidCount()
+    return Result.success(count)
+  }
+
   @Get('land/location-suggestions')
   async suggestLandByLocation(
     @Query(new ZodValidationPipe(LocationSuggestionSchema)) { query, limit }: LocationSuggestionDto,
@@ -113,6 +119,12 @@ export class CrmController {
       paginationResult.strictValue.pageSize,
     )
     return Result.success(data)
+  }
+
+  @Get('realty/invalid-count')
+  async getRealtyInvalidCount(): Promise<Result<number>> {
+    const count = await this.crmService.getRealtyInvalidCount()
+    return Result.success(count)
   }
 
   @Get('realty/location-suggestions')
