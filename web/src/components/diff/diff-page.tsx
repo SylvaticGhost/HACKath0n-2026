@@ -1,6 +1,6 @@
 import { Link } from '@tanstack/react-router'
 import { useEffect, useMemo, useState } from 'react'
-import { Building2, ChevronLeft, ChevronRight, Loader2, MapPinned, Minus, Plus } from 'lucide-react'
+import { Building2, ChevronLeft, ChevronRight, FileText, Loader2, MapPinned, Minus, Plus } from 'lucide-react'
 
 import { useLandDiffList, useRealtyDiffList } from '@/hooks/use-diff'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
@@ -10,8 +10,15 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { cn } from '@/lib/utils'
 import { DiffStatusBadge } from './diff-status-badge'
-import type { LandDiffViewDto, RealtyDiffViewDto } from 'shared'
+import type { LandDiffViewDto, PaginatedList, RealtyDiffViewDto } from 'shared'
 import { format, isValid } from 'date-fns'
+import { fetchApi } from '@/shared/api/client'
+import {
+  generateLandDiffLetterPdf,
+  generateLandDiffPdf,
+  generateRealtyDiffLetterPdf,
+  generateRealtyDiffPdf,
+} from '@/lib/generate-diff-pdf'
 
 export type DiffEntity = 'Land' | 'Realty'
 
@@ -126,25 +133,48 @@ function DiffRow({ label, registryVal, crmVal, fmtFn = fmt, onlyRegistry, onlyCr
   )
 }
 
-function DiffBlockHeader({ id, status, score }: { id: string; status: string; score: number | null }) {
+function DiffBlockHeader({
+  id,
+  status,
+  score,
+  onExportLetter,
+}: {
+  id: string
+  status: string
+  score: number | null
+  onExportLetter?: () => void
+}) {
   return (
     <div className="flex items-center gap-3 border-b border-border/50 bg-muted/30 px-3 py-2">
       <code className="text-xs font-semibold text-foreground/80">{id}</code>
       <DiffStatusBadge status={status} />
-      {score !== null && (
-        <div className="ml-auto flex items-center gap-1.5">
-          <div className="h-1.5 w-16 overflow-hidden rounded-full bg-border">
-            <div
-              className={cn(
-                'h-full rounded-full transition-all',
-                score >= 80 ? 'bg-green-500' : score >= 50 ? 'bg-yellow-500' : 'bg-red-500',
-              )}
-              style={{ width: `${score}%` }}
-            />
+      <div className="ml-auto flex items-center gap-3">
+        {score !== null && (
+          <div className="flex items-center gap-1.5">
+            <div className="h-1.5 w-16 overflow-hidden rounded-full bg-border">
+              <div
+                className={cn(
+                  'h-full rounded-full transition-all',
+                  score >= 80 ? 'bg-green-500' : score >= 50 ? 'bg-yellow-500' : 'bg-red-500',
+                )}
+                style={{ width: `${score}%` }}
+              />
+            </div>
+            <span className="text-xs text-muted-foreground">{score}%</span>
           </div>
-          <span className="text-xs text-muted-foreground">{score}%</span>
-        </div>
-      )}
+        )}
+        {onExportLetter && (
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-7 gap-1.5 border-primary/40 px-2.5 text-[11px] font-medium text-primary hover:bg-primary hover:text-primary-foreground"
+            onClick={onExportLetter}
+          >
+            <FileText className="size-3.5" />
+            Generate PDF
+          </Button>
+        )}
+      </div>
     </div>
   )
 }
@@ -174,6 +204,7 @@ function LandDiffBlock({ row }: { row: LandDiffViewDto }) {
         id={`${row.cadastralNumber} · ${fmtDate(row.registryStateRegistrationDate ?? row.crmStateRegistrationDate)}`}
         status={row.diffStatus}
         score={row.similarityScore}
+        onExportLetter={() => generateLandDiffLetterPdf(row)}
       />
       <DiffBlockColumns />
       <div className="divide-y divide-border/20">
@@ -220,6 +251,7 @@ function RealtyDiffBlock({ row }: { row: RealtyDiffViewDto }) {
         id={`${row.stateTaxId} · ${fmtDate(row.ownershipRegistrationDate)}`}
         status={row.diffStatus}
         score={row.similarityScore}
+        onExportLetter={() => generateRealtyDiffLetterPdf(row)}
       />
       <DiffBlockColumns />
       <div className="divide-y divide-border/20">
@@ -259,6 +291,7 @@ function RealtyDiffBlock({ row }: { row: RealtyDiffViewDto }) {
 export function DiffPage({ entity }: DiffPageProps) {
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE)
+  const [pdfLoading, setPdfLoading] = useState(false)
 
   useEffect(() => {
     setPage(1)
@@ -267,6 +300,21 @@ export function DiffPage({ entity }: DiffPageProps) {
   const isLand = entity === 'Land'
   const landQuery = useLandDiffList(page, pageSize)
   const realtyQuery = useRealtyDiffList(page, pageSize)
+
+  async function handleExportPdf() {
+    setPdfLoading(true)
+    try {
+      if (isLand) {
+        const data = await fetchApi<PaginatedList<LandDiffViewDto>>('/diff/land?page=1&pageSize=9999')
+        generateLandDiffPdf(data.items)
+      } else {
+        const data = await fetchApi<PaginatedList<RealtyDiffViewDto>>('/diff/realty?page=1&pageSize=9999')
+        generateRealtyDiffPdf(data.items)
+      }
+    } finally {
+      setPdfLoading(false)
+    }
+  }
   const activeQuery = isLand ? landQuery : realtyQuery
 
   const totalItems = activeQuery.data?.totalItems ?? 0
@@ -320,13 +368,25 @@ export function DiffPage({ entity }: DiffPageProps) {
                 </Link>
               </div>
 
-              <div className="flex items-center gap-3 text-[11px] text-muted-foreground font-mono">
-                <span className="flex items-center gap-1">
-                  <Minus className="size-3 text-red-400" /> registry
-                </span>
-                <span className="flex items-center gap-1">
-                  <Plus className="size-3 text-green-400" /> crm
-                </span>
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-3 text-[11px] text-muted-foreground font-mono">
+                  <span className="flex items-center gap-1">
+                    <Minus className="size-3 text-red-400" /> registry
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <Plus className="size-3 text-green-400" /> crm
+                  </span>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8 gap-1.5 text-xs"
+                  onClick={handleExportPdf}
+                  disabled={pdfLoading || totalItems === 0}
+                >
+                  {pdfLoading ? <Loader2 className="size-3.5 animate-spin" /> : <FileText className="size-3.5" />}
+                  Export all conflicts
+                </Button>
               </div>
             </div>
           </div>
