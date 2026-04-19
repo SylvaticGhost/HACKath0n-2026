@@ -5,12 +5,14 @@ import {
   FileUp,
   GitCompare,
   Globe2,
+  Info,
   Landmark,
   LayoutDashboardIcon,
   LogOut,
   AlertTriangle,
   Moon,
   Sun,
+  Layers2,
 } from 'lucide-react'
 
 import { ModeToggle } from '@/components/mode-toggle'
@@ -21,7 +23,6 @@ import {
   SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
-  SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
@@ -37,6 +38,7 @@ interface NavigationItem {
 }
 
 const navigationItems: NavigationItem[] = [
+  { label: 'About as', to: '/landing', icon: Info },
   { label: 'Dashboard', to: '/', icon: LayoutDashboardIcon },
   { label: 'Global Registry', to: '/global-registry/land', activePrefix: '/global-registry', icon: Globe2 },
   { label: 'Local Registry', to: '/local-registry/land', activePrefix: '/local-registry', icon: Landmark },
@@ -63,17 +65,11 @@ export function AppSidebar() {
     <Sidebar collapsible="icon" variant="sidebar">
       <SidebarHeader className="h-14 p-2 group-data-[collapsible=icon]:p-1">
         <div className="h-full overflow-hidden px-2">
-          <div className="flex h-full w-full items-center group-data-[collapsible=icon]:justify-center">
-            <img
-              src="/logo.png"
-              alt="Sugar Plant SPT"
-              className="h-20 w-full object-contain group-data-[collapsible=icon]:hidden"
-            />
-            <img
-              src="/logo.png"
-              alt="Sugar Plant SPT"
-              className="hidden size-7 object-contain group-data-[collapsible=icon]:block"
-            />
+          <div className="flex h-full w-full items-center gap-2 group-data-[collapsible=icon]:justify-center">
+            <Layers2 className="size-5 shrink-0 text-primary" />
+            <span className="text-base font-bold tracking-tight group-data-[collapsible=icon]:hidden">
+              TerrasyncCRM
+            </span>
           </div>
         </div>
       </SidebarHeader>
@@ -82,7 +78,6 @@ export function AppSidebar() {
 
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Navigation</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu className="gap-2">
               {navigationItems.map((item) => {

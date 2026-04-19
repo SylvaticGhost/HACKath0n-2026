@@ -82,6 +82,24 @@ export class Result<T> {
     if (!obj.statusCode || typeof obj.statusCode !== 'number') {
       throw new Error('Invalid Result object: missing or invalid statusCode')
     }
-    return new Result<T>(obj.statusCode, obj.value, obj.errorMessage)
+
+    let errorMessage: string | undefined
+
+    if (typeof obj.errorMessage === 'string' && obj.errorMessage.trim().length > 0) {
+      errorMessage = obj.errorMessage
+    } else if (typeof obj.message === 'string' && obj.message.trim().length > 0) {
+      errorMessage = obj.message
+    } else if (Array.isArray(obj.message)) {
+      const messages = obj.message.filter(
+        (value: unknown): value is string => typeof value === 'string' && value.trim().length > 0,
+      )
+      if (messages.length > 0) {
+        errorMessage = messages.join(', ')
+      }
+    } else if (typeof obj.error === 'string' && obj.error.trim().length > 0) {
+      errorMessage = obj.error
+    }
+
+    return new Result<T>(obj.statusCode, obj.value, errorMessage)
   }
 }

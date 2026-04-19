@@ -23,7 +23,6 @@ import {
   Loader2,
   MapPinned,
   ShieldAlert,
-  TrendingUp,
   Users,
 } from 'lucide-react'
 import { useAnalytics } from '@/hooks/use-analytics'
@@ -290,10 +289,6 @@ function DashboardPage() {
         <div>
           <h1 className="text-xl font-bold tracking-tight">Registry Analytics</h1>
           <p className="text-sm text-muted-foreground">Overview of land and property registry status</p>
-        </div>
-        <div className="flex items-center gap-2 rounded-lg border bg-muted/40 px-3 py-1.5 text-xs text-muted-foreground">
-          <TrendingUp className="size-3.5" />
-          Live data
         </div>
       </div>
 

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { createFileRoute } from '@tanstack/react-router'
 import {
   AlertTriangle,
@@ -13,6 +13,7 @@ import {
 } from 'lucide-react'
 import { read, utils } from 'xlsx'
 
+import { getRequestErrorMessage } from '@/components/registry/crm-form-utils'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -21,16 +22,17 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Progress } from '@/components/ui/progress'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { type UploadDataType, type UploadStats, useUploadRegistryFile } from '@/hooks/use-upload'
 import { cn } from '@/lib/utils'
 
 export const Route = createFileRoute('/_app/upload_file')({
   component: UploadFilePage,
 })
 
-const MAX_FILE_SIZE_BYTES = 100 * 1024 * 1024
+const MAX_FILE_SIZE_BYTES = 50 * 1024 * 1024
 const PREVIEW_ROW_LIMIT = 50
 
-type UploadStage = 'idle' | 'uploading' | 'complete'
+type UploadStage = 'idle' | 'uploading' | 'complete' | 'error'
 
 type WorkbookPreview = {
   previewRows: string[][]
@@ -42,7 +44,7 @@ type WorkbookPreview = {
 
 function UploadFilePage() {
   const inputRef = useRef<HTMLInputElement | null>(null)
-  const uploadTimerRef = useRef<number | null>(null)
+  const uploadMutation = useUploadRegistryFile()
 
   const [isDragging, setIsDragging] = useState(false)
   const [isParsing, setIsParsing] = useState(false)
@@ -50,16 +52,8 @@ function UploadFilePage() {
   const [preview, setPreview] = useState<WorkbookPreview | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [uploadStage, setUploadStage] = useState<UploadStage>('idle')
-  const [uploadProgress, setUploadProgress] = useState(0)
-  const [dataType, setDataType] = useState<string>('drrp_land')
-
-  useEffect(() => {
-    return () => {
-      if (uploadTimerRef.current) {
-        window.clearInterval(uploadTimerRef.current)
-      }
-    }
-  }, [])
+  const [uploadResult, setUploadResult] = useState<UploadStats | null>(null)
+  const [dataType, setDataType] = useState<UploadDataType>('drrp_land')
 
   const fileMeta = useMemo(() => {
     if (!selectedFile || !preview) {
@@ -85,15 +79,17 @@ function UploadFilePage() {
     return preview.previewRows.reduce((max, row) => Math.max(max, row.length), preview.totalColumns)
   }, [preview])
 
+  const isUploading = uploadStage === 'uploading'
   const isReady = !!selectedFile && !!preview
-  const canUpload = isReady && !isParsing && uploadStage !== 'uploading'
+  const canUpload = isReady && !isParsing && !isUploading && uploadStage !== 'complete'
+  const uploadProgress = uploadStage === 'complete' ? 100 : 0
 
   async function handleFile(file: File | null | undefined) {
     if (!file) {
       return
     }
 
-    resetUploadSimulation()
+    resetUploadState()
     setErrorMessage(null)
     setIsDragging(false)
 
@@ -112,57 +108,52 @@ function UploadFilePage() {
       setPreview(parsedWorkbook)
     } catch {
       clearSelection()
-      setErrorMessage('Failed to read XLSX. Check the file and try again.')
+      setErrorMessage('Failed to read the spreadsheet. Check the file and try again.')
     } finally {
       setIsParsing(false)
     }
   }
 
-  function resetUploadSimulation() {
-    if (uploadTimerRef.current) {
-      window.clearInterval(uploadTimerRef.current)
-      uploadTimerRef.current = null
-    }
-
+  function resetUploadState() {
     setUploadStage('idle')
-    setUploadProgress(0)
+    setUploadResult(null)
+    uploadMutation.reset()
   }
 
   function clearSelection() {
     setSelectedFile(null)
     setPreview(null)
-    resetUploadSimulation()
+    setErrorMessage(null)
+    resetUploadState()
 
     if (inputRef.current) {
       inputRef.current.value = ''
     }
   }
 
-  function startUploadStub() {
-    if (!canUpload) {
+  function handleDataTypeChange(value: UploadDataType) {
+    setDataType(value)
+    setErrorMessage(null)
+    resetUploadState()
+  }
+
+  async function startUpload() {
+    if (!canUpload || !selectedFile) {
       return
     }
 
-    resetUploadSimulation()
+    setErrorMessage(null)
+    setUploadResult(null)
     setUploadStage('uploading')
 
-    uploadTimerRef.current = window.setInterval(() => {
-      setUploadProgress((currentProgress) => {
-        const increment = currentProgress < 72 ? 8 : currentProgress < 92 ? 4 : 2
-        const nextProgress = Math.min(currentProgress + increment, 100)
-
-        if (nextProgress >= 100) {
-          if (uploadTimerRef.current) {
-            window.clearInterval(uploadTimerRef.current)
-            uploadTimerRef.current = null
-          }
-
-          setUploadStage('complete')
-        }
-
-        return nextProgress
-      })
-    }, 220)
+    try {
+      const stats = await uploadMutation.mutateAsync({ file: selectedFile, dataType })
+      setUploadResult(stats)
+      setUploadStage('complete')
+    } catch (error) {
+      setUploadStage('error')
+      setErrorMessage(getRequestErrorMessage(error, 'Failed to upload file to the server.'))
+    }
   }
 
   return (
@@ -170,7 +161,7 @@ function UploadFilePage() {
       <input
         ref={inputRef}
         type="file"
-        accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        accept=".csv,.xls,.xlsx,text/csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         className="hidden"
         onChange={(event) => {
           void handleFile(event.target.files?.[0])
@@ -207,11 +198,11 @@ function UploadFilePage() {
           <FileMetaCard
             fileMeta={fileMeta}
             canUpload={canUpload}
-            isUploading={uploadStage === 'uploading'}
+            isUploading={isUploading}
             isComplete={uploadStage === 'complete'}
             dataType={dataType}
-            onDataTypeChange={setDataType}
-            onUpload={startUploadStub}
+            onDataTypeChange={handleDataTypeChange}
+            onUpload={() => void startUpload()}
             onReplace={() => inputRef.current?.click()}
             onRemove={clearSelection}
           />
@@ -220,17 +211,16 @@ function UploadFilePage() {
             <ImportProgressCard
               progress={uploadProgress}
               isComplete={uploadStage === 'complete'}
+              stats={uploadResult}
               message={
-                uploadStage === 'complete' ? 'Upload simulation complete.' : 'Simulating file upload to the server.'
+                uploadStage === 'complete'
+                  ? 'The server finished processing the file.'
+                  : 'Uploading the file and processing records on the server.'
               }
             />
           )}
 
-          <PreviewCard
-            preview={preview}
-            previewColumnCount={previewColumnCount}
-            isUploading={uploadStage === 'uploading'}
-          />
+          <PreviewCard preview={preview} previewColumnCount={previewColumnCount} isUploading={isUploading} />
         </div>
       )}
     </div>
@@ -281,13 +271,13 @@ function DropzoneCard({
               <p className="text-base font-medium text-foreground">
                 {isParsing
                   ? 'Reading file and preparing preview...'
-                  : 'Drag and drop an XLSX file here or select one manually'}
+                  : 'Drag and drop a spreadsheet here or select one manually'}
               </p>
             </div>
 
             <div className="flex flex-wrap items-center justify-center gap-2">
-              <Badge variant="secondary">Format: .xlsx</Badge>
-              <Badge variant="secondary">Limit: 100 MB</Badge>
+              <Badge variant="secondary">Formats: .csv, .xls, .xlsx</Badge>
+              <Badge variant="secondary">Limit: 50 MB</Badge>
             </div>
 
             <Button type="button" variant="outline" onClick={onPickFileClick} disabled={isParsing}>
@@ -298,7 +288,7 @@ function DropzoneCard({
           {isParsing && (
             <div className="mt-6 animate-in fade-in">
               <div className="mb-2 flex items-center justify-between text-xs text-muted-foreground">
-                <span>Analyzing Excel structure</span>
+                <span>Analyzing spreadsheet structure</span>
                 <span>{progress}%</span>
               </div>
               <Progress value={progress} className="h-2" />
@@ -343,8 +333,8 @@ function FileMetaCard({
   canUpload: boolean
   isUploading: boolean
   isComplete: boolean
-  dataType: string
-  onDataTypeChange: (value: string) => void
+  dataType: UploadDataType
+  onDataTypeChange: (value: UploadDataType) => void
   onUpload: () => void
   onReplace: () => void
   onRemove: () => void
@@ -375,7 +365,7 @@ function FileMetaCard({
 
           <div className="flex flex-wrap items-center gap-4">
             <div className="flex items-center gap-2">
-              <Select disabled={!canUpload || isUploading} value={dataType} onValueChange={onDataTypeChange}>
+              <Select disabled={isUploading} value={dataType} onValueChange={onDataTypeChange}>
                 <SelectTrigger className="w-[180px] bg-background">
                   <SelectValue placeholder="Select data type" />
                 </SelectTrigger>
@@ -432,10 +422,12 @@ function ImportProgressCard({
   progress,
   message,
   isComplete,
+  stats,
 }: {
   progress: number
   message: string
   isComplete: boolean
+  stats: UploadStats | null
 }) {
   return (
     <Card
@@ -454,12 +446,73 @@ function ImportProgressCard({
             </p>
             <p className="text-sm text-muted-foreground">{message}</p>
           </div>
-          <span className="text-2xl font-semibold tracking-tight text-foreground">{progress}%</span>
+          {isComplete ? (
+            <span className="text-2xl font-semibold tracking-tight text-foreground">{progress}%</span>
+          ) : (
+            <span className="text-sm font-medium uppercase tracking-[0.18em] text-muted-foreground">In progress</span>
+          )}
         </div>
 
-        <Progress value={progress} className="h-2" />
+        {isComplete ? (
+          <Progress value={progress} className="h-2" />
+        ) : (
+          <div className="h-2 overflow-hidden rounded-full bg-primary/20">
+            <div className="h-full w-full animate-pulse rounded-full bg-primary/70" />
+          </div>
+        )}
+
+        {stats && (
+          <div className="mt-4 space-y-4">
+            <div className="grid gap-3 md:grid-cols-4">
+              <StatBadge label="Rows processed" value={stats.total.toLocaleString('en-US')} />
+              <StatBadge label="Inserted to registry" value={stats.insertedToRegistry.toLocaleString('en-US')} />
+              <StatBadge label="Redirected to CRM" value={stats.redirectedToCrm.toLocaleString('en-US')} />
+              <StatBadge label="Errors" value={stats.errors.toLocaleString('en-US')} isDestructive={stats.errors > 0} />
+            </div>
+
+            {stats.errorDetails.length > 0 && (
+              <Alert variant="destructive" className="border-destructive/30">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertTitle>Some rows were skipped</AlertTitle>
+                <AlertDescription>
+                  <ul className="mt-2 list-disc space-y-1 pl-5 text-sm">
+                    {stats.errorDetails.slice(0, 5).map((detail, index) => (
+                      <li key={`${detail}-${index}`}>{detail}</li>
+                    ))}
+                  </ul>
+                  {stats.errorDetails.length > 5 && (
+                    <p className="mt-2 text-sm">
+                      And {stats.errorDetails.length - 5} more row-level errors returned by the server.
+                    </p>
+                  )}
+                </AlertDescription>
+              </Alert>
+            )}
+          </div>
+        )}
       </CardContent>
     </Card>
+  )
+}
+
+function StatBadge({ label, value, isDestructive = false }: { label: string; value: string; isDestructive?: boolean }) {
+  return (
+    <div
+      className={cn(
+        'rounded-xl border bg-background px-4 py-3',
+        isDestructive && 'border-destructive/40 bg-destructive/5',
+      )}
+    >
+      <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">{label}</p>
+      <p
+        className={cn(
+          'mt-2 text-2xl font-semibold tracking-tight text-foreground',
+          isDestructive && 'text-destructive',
+        )}
+      >
+        {value}
+      </p>
+    </div>
   )
 }
 
@@ -486,7 +539,7 @@ function PreviewCard({
             </CardTitle>
             <CardDescription className="mt-1">
               Showing {Math.min(PREVIEW_ROW_LIMIT, preview.previewRows.length)} of{' '}
-              {preview.totalRows.toLocaleString('en-US')} rows from the first sheet.
+              {preview.totalRows.toLocaleString('en-US')} rows from the first worksheet.
             </CardDescription>
           </div>
 
@@ -574,7 +627,7 @@ function PreviewCard({
                           className={cn('max-w-72 align-top', isEmpty && 'text-muted-foreground/50')}
                         >
                           <span className="block truncate" title={value}>
-                            {isEmpty ? '—' : value}
+                            {isEmpty ? '-' : value}
                           </span>
                         </TableCell>
                       )
@@ -636,12 +689,16 @@ function formatCellValue(value: string | number | boolean | Date | null) {
 }
 
 function validateFile(file: File) {
-  if (!file.name.toLowerCase().endsWith('.xlsx')) {
-    return 'An .xlsx file is required.'
+  const normalizedFileName = file.name.toLowerCase()
+  const supportedExtensions = ['.csv', '.xls', '.xlsx']
+  const isSupportedFile = supportedExtensions.some((extension) => normalizedFileName.endsWith(extension))
+
+  if (!isSupportedFile) {
+    return 'A .csv, .xls, or .xlsx file is required.'
   }
 
   if (file.size > MAX_FILE_SIZE_BYTES) {
-    return 'Maximum file size for upload is 100 MB.'
+    return 'Maximum file size for upload is 50 MB.'
   }
 
   return null

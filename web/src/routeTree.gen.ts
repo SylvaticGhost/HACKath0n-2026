@@ -14,6 +14,7 @@ import { Route as AppIndexRouteImport } from './routes/_app/index'
 import { Route as AppUpload_fileRouteImport } from './routes/_app/upload_file'
 import { Route as AppTableRouteImport } from './routes/_app/table'
 import { Route as AppRequestsRouteImport } from './routes/_app/requests'
+import { Route as AppLandingRouteImport } from './routes/_app/landing'
 import { Route as AppDragAndDropRouteImport } from './routes/_app/drag-and-drop'
 import { Route as AppAnomaliesRouteImport } from './routes/_app/anomalies'
 import { Route as AppLocalRegistryRealtyRouteImport } from './routes/_app/local-registry/realty'
@@ -45,6 +46,11 @@ const AppTableRoute = AppTableRouteImport.update({
 const AppRequestsRoute = AppRequestsRouteImport.update({
   id: '/requests',
   path: '/requests',
+  getParentRoute: () => AppRouteRoute,
+} as any)
+const AppLandingRoute = AppLandingRouteImport.update({
+  id: '/landing',
+  path: '/landing',
   getParentRoute: () => AppRouteRoute,
 } as any)
 const AppDragAndDropRoute = AppDragAndDropRouteImport.update({
@@ -92,6 +98,7 @@ export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
   '/anomalies': typeof AppAnomaliesRoute
   '/drag-and-drop': typeof AppDragAndDropRoute
+  '/landing': typeof AppLandingRoute
   '/requests': typeof AppRequestsRoute
   '/table': typeof AppTableRoute
   '/upload_file': typeof AppUpload_fileRoute
@@ -105,6 +112,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/anomalies': typeof AppAnomaliesRoute
   '/drag-and-drop': typeof AppDragAndDropRoute
+  '/landing': typeof AppLandingRoute
   '/requests': typeof AppRequestsRoute
   '/table': typeof AppTableRoute
   '/upload_file': typeof AppUpload_fileRoute
@@ -121,6 +129,7 @@ export interface FileRoutesById {
   '/_app': typeof AppRouteRouteWithChildren
   '/_app/anomalies': typeof AppAnomaliesRoute
   '/_app/drag-and-drop': typeof AppDragAndDropRoute
+  '/_app/landing': typeof AppLandingRoute
   '/_app/requests': typeof AppRequestsRoute
   '/_app/table': typeof AppTableRoute
   '/_app/upload_file': typeof AppUpload_fileRoute
@@ -138,6 +147,7 @@ export interface FileRouteTypes {
     | '/'
     | '/anomalies'
     | '/drag-and-drop'
+    | '/landing'
     | '/requests'
     | '/table'
     | '/upload_file'
@@ -151,6 +161,7 @@ export interface FileRouteTypes {
   to:
     | '/anomalies'
     | '/drag-and-drop'
+    | '/landing'
     | '/requests'
     | '/table'
     | '/upload_file'
@@ -166,6 +177,7 @@ export interface FileRouteTypes {
     | '/_app'
     | '/_app/anomalies'
     | '/_app/drag-and-drop'
+    | '/_app/landing'
     | '/_app/requests'
     | '/_app/table'
     | '/_app/upload_file'
@@ -217,6 +229,13 @@ declare module '@tanstack/react-router' {
       path: '/requests'
       fullPath: '/requests'
       preLoaderRoute: typeof AppRequestsRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
+    '/_app/landing': {
+      id: '/_app/landing'
+      path: '/landing'
+      fullPath: '/landing'
+      preLoaderRoute: typeof AppLandingRouteImport
       parentRoute: typeof AppRouteRoute
     }
     '/_app/drag-and-drop': {
@@ -281,6 +300,7 @@ declare module '@tanstack/react-router' {
 interface AppRouteRouteChildren {
   AppAnomaliesRoute: typeof AppAnomaliesRoute
   AppDragAndDropRoute: typeof AppDragAndDropRoute
+  AppLandingRoute: typeof AppLandingRoute
   AppRequestsRoute: typeof AppRequestsRoute
   AppTableRoute: typeof AppTableRoute
   AppUpload_fileRoute: typeof AppUpload_fileRoute
@@ -296,6 +316,7 @@ interface AppRouteRouteChildren {
 const AppRouteRouteChildren: AppRouteRouteChildren = {
   AppAnomaliesRoute: AppAnomaliesRoute,
   AppDragAndDropRoute: AppDragAndDropRoute,
+  AppLandingRoute: AppLandingRoute,
   AppRequestsRoute: AppRequestsRoute,
   AppTableRoute: AppTableRoute,
   AppUpload_fileRoute: AppUpload_fileRoute,
@@ -308,9 +329,13 @@ const AppRouteRouteChildren: AppRouteRouteChildren = {
   AppLocalRegistryRealtyRoute: AppLocalRegistryRealtyRoute,
 }
 
-const AppRouteRouteWithChildren = AppRouteRoute._addFileChildren(AppRouteRouteChildren)
+const AppRouteRouteWithChildren = AppRouteRoute._addFileChildren(
+  AppRouteRouteChildren,
+)
 
 const rootRouteChildren: RootRouteChildren = {
   AppRouteRoute: AppRouteRouteWithChildren,
 }
-export const routeTree = rootRouteImport._addFileChildren(rootRouteChildren)._addFileTypes<FileRouteTypes>()
+export const routeTree = rootRouteImport
+  ._addFileChildren(rootRouteChildren)
+  ._addFileTypes<FileRouteTypes>()
