@@ -16,13 +16,16 @@ import type {
   UpdateRealtyCrmDto,
 } from 'shared'
 import {
+  LAND_SORT_FIELDS,
   LandCrmDtoSchema,
   LandSearchSchema,
   LocationSuggestionSchema,
   PropertyInfoSchema,
+  REALTY_SORT_FIELDS,
   RealtyCrmDtoSchema,
   RealtyByLocationSchema,
   RealtySearchSchema,
+  SORT_ORDER_VALUES,
   UpdateLandCrmDtoSchema,
   UpdateRealtyCrmDtoSchema,
 } from 'shared'
@@ -44,6 +47,8 @@ export class CrmController {
   @ApiQuery({ name: 'estimateValueMin', required: false, type: Number })
   @ApiQuery({ name: 'estimateValueMax', required: false, type: Number })
   @ApiQuery({ name: 'validationStatus', required: false, enum: ['VALID', 'INVALID'] })
+  @ApiQuery({ name: 'sortBy', required: false, enum: LAND_SORT_FIELDS })
+  @ApiQuery({ name: 'sortOrder', required: false, enum: SORT_ORDER_VALUES })
   async getLandPaginated(
     @Query(new ZodValidationPipe(LandSearchSchema)) params: LandSearchDto,
     @Query('page') page?: string,
@@ -99,6 +104,8 @@ export class CrmController {
   @ApiQuery({ name: 'estimateValueMin', required: false, type: Number })
   @ApiQuery({ name: 'estimateValueMax', required: false, type: Number })
   @ApiQuery({ name: 'validationStatus', required: false, enum: ['VALID', 'INVALID'] })
+  @ApiQuery({ name: 'sortBy', required: false, enum: LAND_SORT_FIELDS })
+  @ApiQuery({ name: 'sortOrder', required: false, enum: SORT_ORDER_VALUES })
   async exportLand(
     @Query(new ZodValidationPipe(LandSearchSchema)) params: LandSearchDto,
     @Res() res: Response,
@@ -165,6 +172,8 @@ export class CrmController {
   @ApiQuery({ name: 'ownershipShareMin', required: false, type: Number })
   @ApiQuery({ name: 'ownershipShareMax', required: false, type: Number })
   @ApiQuery({ name: 'validationStatus', required: false, enum: ['VALID', 'INVALID'] })
+  @ApiQuery({ name: 'sortBy', required: false, enum: REALTY_SORT_FIELDS })
+  @ApiQuery({ name: 'sortOrder', required: false, enum: SORT_ORDER_VALUES })
   async getRealtyPaginated(
     @Query(new ZodValidationPipe(RealtySearchSchema)) params: RealtySearchDto,
     @Query('page') page?: string,
@@ -229,6 +238,8 @@ export class CrmController {
   @ApiQuery({ name: 'ownershipShareMin', required: false, type: Number })
   @ApiQuery({ name: 'ownershipShareMax', required: false, type: Number })
   @ApiQuery({ name: 'validationStatus', required: false, enum: ['VALID', 'INVALID'] })
+  @ApiQuery({ name: 'sortBy', required: false, enum: REALTY_SORT_FIELDS })
+  @ApiQuery({ name: 'sortOrder', required: false, enum: SORT_ORDER_VALUES })
   async exportRealty(
     @Query(new ZodValidationPipe(RealtySearchSchema)) params: RealtySearchDto,
     @Res() res: Response,

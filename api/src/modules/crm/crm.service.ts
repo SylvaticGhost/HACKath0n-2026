@@ -21,6 +21,7 @@ import { LandCrm } from './entities/land.crm.entity'
 import { LandTaxView } from './entities/land-tax.view'
 import { RealtyTaxView } from './entities/realty-tax.view'
 import { Result } from 'shared'
+import { LAND_CRM_SORT_COLUMNS, REALTY_CRM_SORT_COLUMNS } from './crm-sorting'
 
 @Injectable()
 export class CrmService {
@@ -111,8 +112,11 @@ export class CrmService {
       query.andWhere('land.validationStatus = :validationStatus', { validationStatus: params.validationStatus })
     }
 
+    const sortColumn = params.sortBy ? LAND_CRM_SORT_COLUMNS[params.sortBy] : 'land.cadastralNumber'
+    const sortOrder = params.sortOrder === 'desc' ? 'DESC' : 'ASC'
+
     const [items, totalItems] = await query
-      .orderBy('land.cadastralNumber', 'ASC')
+      .orderBy(sortColumn, sortOrder)
       .skip((page - 1) * pageSize)
       .take(pageSize)
       .getManyAndCount()
@@ -208,9 +212,15 @@ export class CrmService {
       query.andWhere('realty.validationStatus = :validationStatus', { validationStatus: params.validationStatus })
     }
 
+    const sortColumn = params.sortBy ? REALTY_CRM_SORT_COLUMNS[params.sortBy] : 'realty.stateTaxId'
+    const sortOrder = params.sortOrder === 'desc' ? 'DESC' : 'ASC'
+
     const [items, totalItems] = await query
-      .orderBy('realty.stateTaxId', 'ASC')
-      .addOrderBy('realty.ownershipRegistrationDate', 'ASC')
+      .orderBy(sortColumn, sortOrder)
+      .addOrderBy(
+        'realty.ownershipRegistrationDate',
+        sortColumn === 'realty.ownershipRegistrationDate' ? sortOrder : 'ASC',
+      )
       .skip((page - 1) * pageSize)
       .take(pageSize)
       .getManyAndCount()
@@ -311,7 +321,9 @@ export class CrmService {
       query.andWhere('land.validationStatus = :validationStatus', { validationStatus: params.validationStatus })
     }
 
-    const items = await query.orderBy('land.cadastralNumber', 'ASC').getMany()
+    const sortColumn = params.sortBy ? LAND_CRM_SORT_COLUMNS[params.sortBy] : 'land.cadastralNumber'
+    const sortOrder = params.sortOrder === 'desc' ? 'DESC' : 'ASC'
+    const items = await query.orderBy(sortColumn, sortOrder).getMany()
 
     const formatDate = (d: Date | string | null | undefined): string => {
       if (!d) return ''
@@ -374,9 +386,14 @@ export class CrmService {
       query.andWhere('realty.validationStatus = :validationStatus', { validationStatus: params.validationStatus })
     }
 
+    const sortColumn = params.sortBy ? REALTY_CRM_SORT_COLUMNS[params.sortBy] : 'realty.stateTaxId'
+    const sortOrder = params.sortOrder === 'desc' ? 'DESC' : 'ASC'
     const items = await query
-      .orderBy('realty.stateTaxId', 'ASC')
-      .addOrderBy('realty.ownershipRegistrationDate', 'ASC')
+      .orderBy(sortColumn, sortOrder)
+      .addOrderBy(
+        'realty.ownershipRegistrationDate',
+        sortColumn === 'realty.ownershipRegistrationDate' ? sortOrder : 'ASC',
+      )
       .getMany()
 
     const formatDate = (d: Date | string | null | undefined): string => {

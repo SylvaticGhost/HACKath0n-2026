@@ -1,5 +1,6 @@
-import type { ColumnDef } from '@tanstack/react-table'
+import type { ColumnDef, ColumnFiltersState, OnChangeFn, SortingState } from '@tanstack/react-table'
 import { flexRender, getCoreRowModel, useReactTable, getPaginationRowModel } from '@tanstack/react-table'
+import type { ReactNode } from 'react'
 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
@@ -9,6 +10,11 @@ interface DataTableProps<TData, TValue> {
   data: TData[]
   showPaginationControls?: boolean
   onRowClick?: (rowData: TData) => void
+  toolbar?: ReactNode
+  sorting?: SortingState
+  onSortingChange?: OnChangeFn<SortingState>
+  columnFilters?: ColumnFiltersState
+  onColumnFiltersChange?: OnChangeFn<ColumnFiltersState>
 }
 
 export function DataTable<TData, TValue>({
@@ -16,10 +22,23 @@ export function DataTable<TData, TValue>({
   data,
   showPaginationControls = true,
   onRowClick,
+  toolbar,
+  sorting,
+  onSortingChange,
+  columnFilters,
+  onColumnFiltersChange,
 }: DataTableProps<TData, TValue>) {
   const table = useReactTable({
     data,
     columns,
+    state: {
+      sorting,
+      columnFilters,
+    },
+    manualSorting: Boolean(onSortingChange),
+    manualFiltering: Boolean(onColumnFiltersChange),
+    onSortingChange,
+    onColumnFiltersChange,
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
   })
@@ -29,7 +48,8 @@ export function DataTable<TData, TValue>({
 
   return (
     <div className="space-y-4">
-      <div className="overflow-hidden">
+      <div className="overflow-hidden rounded-xl border border-border/50 bg-card">
+        {toolbar ? <div className="border-b border-border/50 px-3 py-3">{toolbar}</div> : null}
         <Table className="min-w-full w-max [&_tr]:border-0">
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (

@@ -1,5 +1,24 @@
 import { z } from 'zod'
 
+export const SORT_ORDER_VALUES = ['asc', 'desc'] as const
+export const LAND_SORT_FIELDS = [
+  'cadastralNumber',
+  'location',
+  'square',
+  'estimateValue',
+  'stateTaxId',
+  'user',
+  'stateRegistrationDate',
+] as const
+export const REALTY_SORT_FIELDS = [
+  'stateTaxId',
+  'ownershipRegistrationDate',
+  'taxpayerName',
+  'objectAddress',
+  'totalArea',
+  'ownershipShare',
+] as const
+
 export const LandSearchSchema = z.object({
   cadastralNumber: z.string().optional(),
   stateTaxId: z.string().optional(),
@@ -10,6 +29,8 @@ export const LandSearchSchema = z.object({
   estimateValueMin: z.coerce.number().optional(),
   estimateValueMax: z.coerce.number().optional(),
   validationStatus: z.string().optional(),
+  sortBy: z.enum(LAND_SORT_FIELDS).optional(),
+  sortOrder: z.enum(SORT_ORDER_VALUES).optional(),
 })
 
 export type LandSearchDto = z.infer<typeof LandSearchSchema>
@@ -23,6 +44,8 @@ export const RealtySearchSchema = z.object({
   ownershipShareMin: z.coerce.number().optional(),
   ownershipShareMax: z.coerce.number().optional(),
   validationStatus: z.string().optional(),
+  sortBy: z.enum(REALTY_SORT_FIELDS).optional(),
+  sortOrder: z.enum(SORT_ORDER_VALUES).optional(),
 })
 
 export type RealtySearchDto = z.infer<typeof RealtySearchSchema>
