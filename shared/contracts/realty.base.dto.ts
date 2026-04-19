@@ -10,4 +10,5 @@ export const BaseRealtyDtoSchema = z.object({
   totalArea: z.number(),
   jointOwnershipType: z.string().nullable().optional(),
   ownershipShare: z.number().nullable().optional(),
+  validationStatus: z.string().nullable().optional(),
 })

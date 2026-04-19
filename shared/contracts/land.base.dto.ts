@@ -17,4 +17,5 @@ export const BaseLandDtoSchema = z.object({
   registrator: z.string(),
   type: z.string(),
   subtype: z.string(),
+  validationStatus: z.string().nullable().optional(),
 })
