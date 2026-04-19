@@ -233,8 +233,6 @@ function UploadFilePage() {
           />
         </div>
       )}
-
-      {!isReady && !errorMessage && <EmptyPreviewState />}
     </div>
   )
 }
@@ -586,25 +584,6 @@ function PreviewCard({
               )}
             </TableBody>
           </Table>
-        </div>
-      </CardContent>
-    </Card>
-  )
-}
-
-function EmptyPreviewState() {
-  return (
-    <Card className="border-dashed">
-      <CardContent className="flex min-h-[240px] flex-col items-center justify-center gap-3 p-8 text-center">
-        <div className="flex h-14 w-14 items-center justify-center rounded-full border bg-muted/30">
-          <FileSpreadsheet className="h-6 w-6 text-muted-foreground" />
-        </div>
-        <div className="space-y-1">
-          <h2 className="text-lg font-medium text-foreground">Table preview will appear here</h2>
-          <p className="max-w-md text-sm text-muted-foreground">
-            After selecting a valid XLSX file, we will show the first 50 rows, the number of columns, and basic file
-            information.
-          </p>
         </div>
       </CardContent>
     </Card>
