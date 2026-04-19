@@ -87,6 +87,18 @@ export class RegistryService {
     if (params.location) {
       query.andWhere('land.location ILIKE :location', { location: `%${params.location}%` })
     }
+    if (params.squareMin !== undefined) {
+      query.andWhere('land.square >= :squareMin', { squareMin: params.squareMin })
+    }
+    if (params.squareMax !== undefined) {
+      query.andWhere('land.square <= :squareMax', { squareMax: params.squareMax })
+    }
+    if (params.estimateValueMin !== undefined) {
+      query.andWhere('land.estimateValue >= :estimateValueMin', { estimateValueMin: params.estimateValueMin })
+    }
+    if (params.estimateValueMax !== undefined) {
+      query.andWhere('land.estimateValue <= :estimateValueMax', { estimateValueMax: params.estimateValueMax })
+    }
 
     const [items, totalItems] = await query
       .orderBy('land.cadastralNumber', 'ASC')
@@ -94,12 +106,7 @@ export class RegistryService {
       .take(pageSize)
       .getManyAndCount()
 
-    return {
-      items,
-      totalItems,
-      page,
-      pageSize,
-    }
+    return { items, totalItems, page, pageSize }
   }
 
   async getRealtyPaginated(page: number, pageSize: number): Promise<PaginatedList<RealtyRegistryDto>> {
@@ -151,9 +158,19 @@ export class RegistryService {
       })
     }
     if (params.objectAddress) {
-      query.andWhere('realty.objectAddress ILIKE :objectAddress', {
-        objectAddress: `%${params.objectAddress}%`,
-      })
+      query.andWhere('realty.objectAddress ILIKE :objectAddress', { objectAddress: `%${params.objectAddress}%` })
+    }
+    if (params.totalAreaMin !== undefined) {
+      query.andWhere('realty.totalArea >= :totalAreaMin', { totalAreaMin: params.totalAreaMin })
+    }
+    if (params.totalAreaMax !== undefined) {
+      query.andWhere('realty.totalArea <= :totalAreaMax', { totalAreaMax: params.totalAreaMax })
+    }
+    if (params.ownershipShareMin !== undefined) {
+      query.andWhere('realty.ownershipShare >= :ownershipShareMin', { ownershipShareMin: params.ownershipShareMin })
+    }
+    if (params.ownershipShareMax !== undefined) {
+      query.andWhere('realty.ownershipShare <= :ownershipShareMax', { ownershipShareMax: params.ownershipShareMax })
     }
 
     const [items, totalItems] = await query
@@ -163,11 +180,6 @@ export class RegistryService {
       .take(pageSize)
       .getManyAndCount()
 
-    return {
-      items,
-      totalItems,
-      page,
-      pageSize,
-    }
+    return { items, totalItems, page, pageSize }
   }
 }
