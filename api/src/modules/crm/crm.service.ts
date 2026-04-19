@@ -1,3 +1,4 @@
+import * as XLSX from 'xlsx'
 import { Injectable } from '@nestjs/common'
 import { InjectEntityManager } from '@nestjs/typeorm'
 import type {
@@ -268,6 +269,131 @@ export class CrmService {
     }
     await this.realtyCrmRepository.delete({ stateTaxId, ownershipRegistrationDate })
     return Result.success<null>(null)
+  }
+
+  async exportLand(params: LandSearchDto): Promise<Buffer> {
+    const query = this.entityManager.createQueryBuilder(LandCrm, 'land')
+
+    if (params.cadastralNumber) {
+      query.andWhere('land.cadastralNumber ILIKE :cadastralNumber', { cadastralNumber: `%${params.cadastralNumber}%` })
+    }
+    if (params.stateTaxId) {
+      query.andWhere('land.stateTaxId ILIKE :stateTaxId', { stateTaxId: `%${params.stateTaxId}%` })
+    }
+    if (params.user) {
+      query.andWhere('land.user ILIKE :user', { user: `%${params.user}%` })
+    }
+    if (params.location) {
+      query.andWhere('land.location ILIKE :location', { location: `%${params.location}%` })
+    }
+    if (params.squareMin !== undefined) {
+      query.andWhere('land.square >= :squareMin', { squareMin: params.squareMin })
+    }
+    if (params.squareMax !== undefined) {
+      query.andWhere('land.square <= :squareMax', { squareMax: params.squareMax })
+    }
+    if (params.estimateValueMin !== undefined) {
+      query.andWhere('land.estimateValue >= :estimateValueMin', { estimateValueMin: params.estimateValueMin })
+    }
+    if (params.estimateValueMax !== undefined) {
+      query.andWhere('land.estimateValue <= :estimateValueMax', { estimateValueMax: params.estimateValueMax })
+    }
+    if (params.validationStatus) {
+      query.andWhere('land.validationStatus = :validationStatus', { validationStatus: params.validationStatus })
+    }
+
+    const items = await query.orderBy('land.cadastralNumber', 'ASC').getMany()
+
+    const formatDate = (d: Date | string | null | undefined): string => {
+      if (!d) return ''
+      const date = d instanceof Date ? d : new Date(d)
+      if (isNaN(date.getTime())) return String(d)
+      const dd = String(date.getDate()).padStart(2, '0')
+      const mm = String(date.getMonth() + 1).padStart(2, '0')
+      return `${dd}.${mm}.${date.getFullYear()}`
+    }
+
+    const rows = items.map((item) => ({
+      'Кадастровий номер': item.cadastralNumber,
+      КОАТУУ: item.koatuu,
+      'Форма власності': item.ownershipType,
+      'Цільове призначення': item.intendedPurpose,
+      Місцерозташування: item.location,
+      'Вид с/г угідь': item.landPurposeType,
+      'Площа, га': item.square,
+      'Усереднена нормативно грошова оцінка': item.estimateValue,
+      'ЄДРПОУ землекористувача': item.stateTaxId,
+      Землекористувач: item.user,
+      'Частка володіння': item.ownerPart ?? '',
+      'Дата державної реєстрації права власності': formatDate(item.stateRegistrationDate),
+      'Номер запису про право власності': item.ownershipRegistrationId,
+      'Орган, що здійснив державну реєстрацію права власності': item.registrator,
+      Тип: item.type,
+      Підтип: item.subtype,
+    }))
+
+    const wb = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows), 'Земля')
+    return XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' }) as Buffer
+  }
+
+  async exportRealty(params: RealtySearchDto): Promise<Buffer> {
+    const query = this.entityManager.createQueryBuilder(RealtyCrm, 'realty')
+
+    if (params.stateTaxId) {
+      query.andWhere('realty.stateTaxId ILIKE :stateTaxId', { stateTaxId: `%${params.stateTaxId}%` })
+    }
+    if (params.taxpayerName) {
+      query.andWhere('realty.taxpayerName ILIKE :taxpayerName', { taxpayerName: `%${params.taxpayerName}%` })
+    }
+    if (params.objectAddress) {
+      query.andWhere('realty.objectAddress ILIKE :objectAddress', { objectAddress: `%${params.objectAddress}%` })
+    }
+    if (params.totalAreaMin !== undefined) {
+      query.andWhere('realty.totalArea >= :totalAreaMin', { totalAreaMin: params.totalAreaMin })
+    }
+    if (params.totalAreaMax !== undefined) {
+      query.andWhere('realty.totalArea <= :totalAreaMax', { totalAreaMax: params.totalAreaMax })
+    }
+    if (params.ownershipShareMin !== undefined) {
+      query.andWhere('realty.ownershipShare >= :ownershipShareMin', { ownershipShareMin: params.ownershipShareMin })
+    }
+    if (params.ownershipShareMax !== undefined) {
+      query.andWhere('realty.ownershipShare <= :ownershipShareMax', { ownershipShareMax: params.ownershipShareMax })
+    }
+    if (params.validationStatus) {
+      query.andWhere('realty.validationStatus = :validationStatus', { validationStatus: params.validationStatus })
+    }
+
+    const items = await query
+      .orderBy('realty.stateTaxId', 'ASC')
+      .addOrderBy('realty.ownershipRegistrationDate', 'ASC')
+      .getMany()
+
+    const formatDate = (d: Date | string | null | undefined): string => {
+      if (!d) return ''
+      const date = d instanceof Date ? d : new Date(d)
+      if (isNaN(date.getTime())) return String(d)
+      const dd = String(date.getDate()).padStart(2, '0')
+      const mm = String(date.getMonth() + 1).padStart(2, '0')
+      return `${dd}.${mm}.${date.getFullYear()}`
+    }
+
+    const rows = items.map((item) => ({
+      'Податковий номер ПП': item.stateTaxId,
+      Платник: item.taxpayerName,
+      "Тип об'єкта": item.objectType,
+      "Адреса об'єкта": item.objectAddress,
+      'Дата реєстрації права': formatDate(item.ownershipRegistrationDate),
+      'Дата припинення': formatDate(item.ownershipTerminationDate),
+      'Загальна площа': item.totalArea,
+      'Тип спільної власності': item.jointOwnershipType ?? '',
+      Частка: item.ownershipShare ?? '',
+    }))
+
+    const wb = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows), 'Нерухомість')
+    return XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' }) as Buffer
   }
 
   async getLandTax(page: number, pageSize: number): Promise<PaginatedList<LandTaxViewDto>> {

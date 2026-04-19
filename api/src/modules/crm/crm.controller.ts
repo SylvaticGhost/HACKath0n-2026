@@ -1,5 +1,6 @@
-import { Body, Controller, Delete, Get, Param, Post, Put, Query, UsePipes } from '@nestjs/common'
+import { Body, Controller, Delete, Get, Param, Post, Put, Query, Res, UsePipes } from '@nestjs/common'
 import { ApiQuery, ApiTags } from '@nestjs/swagger'
+import type { Response } from 'express'
 import type {
   LandCrmDto,
   LandSearchDto,
@@ -88,6 +89,22 @@ export class CrmController {
       paginationResult.strictValue.pageSize,
     )
     return Result.success(data)
+  }
+
+  @Get('land/export')
+  @ApiQuery({ name: 'squareMin', required: false, type: Number })
+  @ApiQuery({ name: 'squareMax', required: false, type: Number })
+  @ApiQuery({ name: 'estimateValueMin', required: false, type: Number })
+  @ApiQuery({ name: 'estimateValueMax', required: false, type: Number })
+  @ApiQuery({ name: 'validationStatus', required: false, enum: ['VALID', 'INVALID'] })
+  async exportLand(
+    @Query(new ZodValidationPipe(LandSearchSchema)) params: LandSearchDto,
+    @Res() res: Response,
+  ): Promise<void> {
+    const buffer = await this.crmService.exportLand(params)
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    res.setHeader('Content-Disposition', 'attachment; filename="land.xlsx"')
+    res.send(buffer)
   }
 
   @Get('land/tax')
@@ -193,6 +210,22 @@ export class CrmController {
       paginationResult.strictValue.pageSize,
     )
     return Result.success(data)
+  }
+
+  @Get('realty/export')
+  @ApiQuery({ name: 'totalAreaMin', required: false, type: Number })
+  @ApiQuery({ name: 'totalAreaMax', required: false, type: Number })
+  @ApiQuery({ name: 'ownershipShareMin', required: false, type: Number })
+  @ApiQuery({ name: 'ownershipShareMax', required: false, type: Number })
+  @ApiQuery({ name: 'validationStatus', required: false, enum: ['VALID', 'INVALID'] })
+  async exportRealty(
+    @Query(new ZodValidationPipe(RealtySearchSchema)) params: RealtySearchDto,
+    @Res() res: Response,
+  ): Promise<void> {
+    const buffer = await this.crmService.exportRealty(params)
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    res.setHeader('Content-Disposition', 'attachment; filename="realty.xlsx"')
+    res.send(buffer)
   }
 
   @Get('realty/tax')
