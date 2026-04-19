@@ -5,6 +5,7 @@ import {
   FileUp,
   GitCompare,
   Globe2,
+  Info,
   Landmark,
   LayoutDashboardIcon,
   LogOut,
@@ -21,7 +22,6 @@ import {
   SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
-  SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
@@ -37,6 +37,7 @@ interface NavigationItem {
 }
 
 const navigationItems: NavigationItem[] = [
+  { label: 'About as', to: '/landing', icon: Info },
   { label: 'Dashboard', to: '/', icon: LayoutDashboardIcon },
   { label: 'Global Registry', to: '/global-registry/land', activePrefix: '/global-registry', icon: Globe2 },
   { label: 'Local Registry', to: '/local-registry/land', activePrefix: '/local-registry', icon: Landmark },
@@ -82,7 +83,6 @@ export function AppSidebar() {
 
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Navigation</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu className="gap-2">
               {navigationItems.map((item) => {
