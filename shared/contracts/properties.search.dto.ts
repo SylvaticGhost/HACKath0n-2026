@@ -33,3 +33,9 @@ export const LocationSuggestionSchema = z.object({
 })
 
 export type LocationSuggestionDto = z.infer<typeof LocationSuggestionSchema>
+
+export const RealtyByLocationSchema = z.object({
+  objectAddress: z.string().min(1, 'objectAddress is required'),
+})
+
+export type RealtyByLocationDto = z.infer<typeof RealtyByLocationSchema>

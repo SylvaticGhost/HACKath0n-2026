@@ -9,6 +9,7 @@ import type {
   PaginatedList,
   PropertyInfo,
   RealtyCrmDto,
+  RealtyByLocationDto,
   RealtySearchDto,
   RealtyTaxViewDto,
   UpdateLandCrmDto,
@@ -20,6 +21,7 @@ import {
   LocationSuggestionSchema,
   PropertyInfoSchema,
   RealtyCrmDtoSchema,
+  RealtyByLocationSchema,
   RealtySearchSchema,
   UpdateLandCrmDtoSchema,
   UpdateRealtyCrmDtoSchema,
@@ -191,6 +193,15 @@ export class CrmController {
     @Query(new ZodValidationPipe(LocationSuggestionSchema)) { query, limit }: LocationSuggestionDto,
   ): Promise<Result<RealtyCrmDto[]>> {
     const data = await this.crmService.suggestRealtyByLocation(query, limit)
+    return Result.success(data)
+  }
+
+  @Get('realty/by-location')
+  @ApiQuery({ name: 'objectAddress', required: true, type: String })
+  async findRealtyByLocationExact(
+    @Query(new ZodValidationPipe(RealtyByLocationSchema)) { objectAddress }: RealtyByLocationDto,
+  ): Promise<Result<RealtyCrmDto[]>> {
+    const data = await this.crmService.findRealtyByLocationExact(objectAddress)
     return Result.success(data)
   }
 
