@@ -56,4 +56,7 @@ export class LandCrm {
 
   @Column({ name: 'validation_errors', type: 'text', array: true, nullable: true })
   validationErrors?: ValidationError[]
+
+  @Column({ name: 'property_info', type: 'jsonb' })
+  propertyInfo: object
 }

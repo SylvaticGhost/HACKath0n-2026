@@ -5,6 +5,7 @@ import type {
   LandSearchDto,
   LandTaxViewDto,
   PaginatedList,
+  PropertyInfo,
   RealtyCrmDto,
   RealtySearchDto,
   RealtyTaxViewDto,
@@ -288,6 +289,32 @@ export class CrmService {
       .take(pageSize)
       .getManyAndCount()
     return { items, totalItems, page, pageSize }
+  }
+
+  async upsertLandPropertyInfo(cadastralNumber: string, info: PropertyInfo): Promise<Result<null>> {
+    const existing = await this.landCrmRepository.findOne({ where: { cadastralNumber } })
+    if (!existing) {
+      return Result.notFound<null>(`Land with cadastralNumber "${cadastralNumber}" not found`)
+    }
+    await this.landCrmRepository.update({ cadastralNumber }, { propertyInfo: info })
+    return Result.success<null>(null)
+  }
+
+  async upsertRealtyPropertyInfo(
+    stateTaxId: string,
+    ownershipRegistrationDate: Date,
+    info: PropertyInfo,
+  ): Promise<Result<null>> {
+    const existing = await this.realtyCrmRepository.findOne({
+      where: { stateTaxId, ownershipRegistrationDate },
+    })
+    if (!existing) {
+      return Result.notFound<null>(
+        `Realty with stateTaxId "${stateTaxId}" and ownershipRegistrationDate "${ownershipRegistrationDate}" not found`,
+      )
+    }
+    await this.realtyCrmRepository.update({ stateTaxId, ownershipRegistrationDate }, { propertyInfo: info })
+    return Result.success<null>(null)
   }
 
   async clearData(): Promise<Result<null>> {

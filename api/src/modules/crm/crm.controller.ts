@@ -6,6 +6,7 @@ import type {
   LandTaxViewDto,
   LocationSuggestionDto,
   PaginatedList,
+  PropertyInfo,
   RealtyCrmDto,
   RealtySearchDto,
   RealtyTaxViewDto,
@@ -16,6 +17,7 @@ import {
   LandCrmDtoSchema,
   LandSearchSchema,
   LocationSuggestionSchema,
+  PropertyInfoSchema,
   RealtyCrmDtoSchema,
   RealtySearchSchema,
   UpdateLandCrmDtoSchema,
@@ -121,6 +123,14 @@ export class CrmController {
     @Body(new ZodValidationPipe(UpdateLandCrmDtoSchema)) dto: UpdateLandCrmDto,
   ): Promise<Result<LandCrmDto>> {
     return this.crmService.updateLand(cadastralNumber, dto)
+  }
+
+  @Put('land/:cadastralNumber/property-info')
+  async upsertLandPropertyInfo(
+    @Param('cadastralNumber') cadastralNumber: string,
+    @Body(new ZodValidationPipe(PropertyInfoSchema)) info: PropertyInfo,
+  ): Promise<Result<null>> {
+    return this.crmService.upsertLandPropertyInfo(cadastralNumber, info)
   }
 
   @Delete('land/:cadastralNumber')
@@ -230,6 +240,19 @@ export class CrmController {
       return Result.badRequest<RealtyCrmDto>('Invalid ownershipRegistrationDate format')
     }
     return this.crmService.updateRealty(stateTaxId, date, dto)
+  }
+
+  @Put('realty/:stateTaxId/:ownershipRegistrationDate/property-info')
+  async upsertRealtyPropertyInfo(
+    @Param('stateTaxId') stateTaxId: string,
+    @Param('ownershipRegistrationDate') ownershipRegistrationDateStr: string,
+    @Body(new ZodValidationPipe(PropertyInfoSchema)) info: PropertyInfo,
+  ): Promise<Result<null>> {
+    const date = new Date(ownershipRegistrationDateStr)
+    if (isNaN(date.getTime())) {
+      return Result.badRequest<null>('Invalid ownershipRegistrationDate format')
+    }
+    return this.crmService.upsertRealtyPropertyInfo(stateTaxId, date, info)
   }
 
   @Delete('realty/:stateTaxId/:ownershipRegistrationDate')
