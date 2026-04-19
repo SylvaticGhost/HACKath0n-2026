@@ -8,6 +8,7 @@ const DEFAULT_WIDTH_CLASS = 'w-[11rem] max-w-[11rem]'
 interface RegistryColumnOptions<TData> {
   widthClassName?: string
   formatValue?: (value: unknown, row: TData) => string
+  header?: ColumnDef<TData, any>['header']
 }
 
 function renderTruncatedValue(value: string, widthClassName: string) {
@@ -91,7 +92,7 @@ export function createRegistryColumn<TData extends object>(
 
   return {
     accessorKey,
-    header: () => renderTruncatedValue(header, widthClassName),
+    header: options.header ?? (() => renderTruncatedValue(header, widthClassName)),
     cell: ({ row }) => {
       const rawValue = row.getValue(accessorKey)
       const displayValue = options.formatValue?.(rawValue, row.original) ?? formatDefaultValue(rawValue)

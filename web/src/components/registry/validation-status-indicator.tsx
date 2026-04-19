@@ -2,13 +2,13 @@ import { AlertCircle, CheckCircle2 } from 'lucide-react'
 import { useState, useRef, useEffect } from 'react'
 
 export interface ValidationMetadata {
-  validationStatus?: 'VALID' | 'INVALID' | null
+  validationStatus?: string | null
   validationErrors?: string[] | null
-  crmValidationStatus?: 'VALID' | 'INVALID' | null
+  crmValidationStatus?: string | null
   crmValidationErrors?: string[] | null
-  validation_status?: 'VALID' | 'INVALID' | null
+  validation_status?: string | null
   validation_errors?: string[] | null
-  crm_validation_status?: 'VALID' | 'INVALID' | null
+  crm_validation_status?: string | null
   crm_validation_errors?: string[] | null
 }
 
