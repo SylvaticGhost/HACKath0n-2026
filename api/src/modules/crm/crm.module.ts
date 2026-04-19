@@ -4,10 +4,13 @@ import { CrmService } from './crm.service'
 import { CrmController } from './crm.controller'
 import { RealtyCrm } from './entities/realty.crm.entity'
 import { LandCrm } from './entities/land.crm.entity'
+import { Anomaly } from './entities/annomaly.entity'
+import { AnomalyService } from './anomaly.service'
+import { AnomalyController } from './anomaly.controller'
 
 @Module({
-  imports: [TypeOrmModule.forFeature([RealtyCrm, LandCrm])],
-  controllers: [CrmController],
-  providers: [CrmService],
+  imports: [TypeOrmModule.forFeature([RealtyCrm, LandCrm, Anomaly])],
+  controllers: [CrmController, AnomalyController],
+  providers: [CrmService, AnomalyService],
 })
 export class CrmModule {}
