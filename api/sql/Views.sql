@@ -38,6 +38,7 @@ SELECT
     r.square AS registry_square,
     r.estimate_value AS registry_estimate_value,
     r.location AS registry_location,
+    r.state_registration_date AS registry_state_registration_date,
 
     -- Дані локальної CRM
     c.state_tax_id AS crm_tax_id,
@@ -45,6 +46,7 @@ SELECT
     c.square AS crm_square,
     c.estimate_value AS crm_estimate_value,
     c.location AS crm_location,
+    c.state_registration_date AS crm_state_registration_date,
 
     -- Валідація CRM-запису
     c.validation_status AS crm_validation_status,
@@ -70,6 +72,7 @@ SELECT
           OR r.object_address IS DISTINCT FROM c.object_address
           OR r.total_area IS DISTINCT FROM c.total_area
           OR r.ownership_share IS DISTINCT FROM c.ownership_share
+          OR r.ownership_termination_date IS DISTINCT FROM c.ownership_termination_date
         THEN 'CONFLICT'
         ELSE 'MATCH'
     END AS diff_status,
@@ -82,7 +85,7 @@ SELECT
           OR r.object_address IS DISTINCT FROM c.object_address
           OR r.total_area IS DISTINCT FROM c.total_area
           OR r.ownership_share IS DISTINCT FROM c.ownership_share
-        -- Кастування більше не потрібне, оскільки "r" вже є типом crm.normalized_registry_realty
+          OR r.ownership_termination_date IS DISTINCT FROM c.ownership_termination_date
         THEN crm.calculate_realty_similarity(c, r)
         ELSE 100
     END AS similarity_score,
