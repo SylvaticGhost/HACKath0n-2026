@@ -21,6 +21,9 @@ CREATE TABLE IF NOT EXISTS crm.land (
   validation_errors         TEXT[]
 );
 
+ALTER TABLE crm.land
+ADD COLUMN property_info JSONB;
+
 CREATE TABLE IF NOT EXISTS crm.realty (
   state_tax_id                    VARCHAR(10)        ,
   taxpayer_name                   VARCHAR(255)       ,
@@ -35,6 +38,9 @@ CREATE TABLE IF NOT EXISTS crm.realty (
   validation_errors               TEXT[],
   PRIMARY KEY (state_tax_id, ownership_registration_date)
 );
+
+ALTER TABLE crm.realty
+ADD COLUMN property_info JSONB;
 
 CREATE VIEW crm.normalized_registry_land AS
 SELECT

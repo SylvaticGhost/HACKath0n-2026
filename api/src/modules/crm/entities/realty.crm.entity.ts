@@ -1,5 +1,6 @@
 import { Column, Entity, PrimaryColumn } from 'typeorm'
 import type { ValidationError, ValidationStatus } from '../../upload/land-processor'
+import type { PropertyInfo } from 'shared'
 
 @Entity({ name: 'realty', schema: 'crm' })
 export class RealtyCrm {
@@ -35,4 +36,7 @@ export class RealtyCrm {
 
   @Column({ name: 'validation_errors', type: 'text', array: true, nullable: true })
   validationErrors?: ValidationError[]
+
+  @Column({ name: 'property_info', type: 'jsonb' })
+  propertyInfo: PropertyInfo
 }
