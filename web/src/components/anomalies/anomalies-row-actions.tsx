@@ -48,6 +48,7 @@ export function AnomaliesRowActions({ anomaly }: AnomaliesRowActionsProps) {
           className={`h-8 w-8 ${isResolved ? 'opacity-50' : ''}`}
           title={isResolved ? 'Resolved' : 'Mark as resolved'}
           disabled={isResolved || mutation.isPending}
+          onClick={(event) => event.stopPropagation()}
         >
           <CheckCircle className={`size-4 ${isResolved ? '' : 'text-green-500'}`} />
         </Button>
