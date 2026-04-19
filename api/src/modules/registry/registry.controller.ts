@@ -5,10 +5,11 @@ import type {
   LandSearchDto,
   LocationSuggestionDto,
   PaginatedList,
+  RealtyByLocationDto,
   RealtyRegistryDto,
   RealtySearchDto,
 } from 'shared'
-import { LandSearchSchema, LocationSuggestionSchema, RealtySearchSchema, Result } from 'shared'
+import { LandSearchSchema, LocationSuggestionSchema, RealtyByLocationSchema, RealtySearchSchema, Result } from 'shared'
 import { ZodValidationPipe } from '../../middleware/zod-validation.pipe'
 import { parsePaginationQuery } from '../../utils/pagination-query'
 import { RegistryService } from './registry.service'
@@ -115,6 +116,15 @@ export class RegistryController {
     @Query(new ZodValidationPipe(LocationSuggestionSchema)) { query, limit }: LocationSuggestionDto,
   ): Promise<Result<RealtyRegistryDto[]>> {
     const data = await this.registryService.suggestRealtyByLocation(query, limit)
+    return Result.success(data)
+  }
+
+  @Get('realty/by-location')
+  @ApiQuery({ name: 'objectAddress', required: true, type: String })
+  async findRealtyByLocationExact(
+    @Query(new ZodValidationPipe(RealtyByLocationSchema)) { objectAddress }: RealtyByLocationDto,
+  ): Promise<Result<RealtyRegistryDto[]>> {
+    const data = await this.registryService.findRealtyByLocationExact(objectAddress)
     return Result.success(data)
   }
 
