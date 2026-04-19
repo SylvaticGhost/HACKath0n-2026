@@ -1,8 +1,6 @@
 import { createRootRoute, Outlet, ScrollRestoration, Link } from '@tanstack/react-router'
-import { TanStackRouterDevtools } from '@tanstack/router-devtools'
 import { ThemeProvider } from '@/components/theme-provider'
 import { NuqsAdapter } from 'nuqs/adapters/tanstack-router'
-import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 
 export const Route = createRootRoute({
   component: RootComponent,
@@ -18,18 +16,11 @@ export const Route = createRootRoute({
 })
 
 function RootComponent() {
-  const isDev = import.meta.env.DEV
   return (
     <NuqsAdapter>
       <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
         <Outlet />
         <ScrollRestoration />
-        {!isDev && (
-          <>
-            <TanStackRouterDevtools position="bottom-left" />
-            <ReactQueryDevtools />
-          </>
-        )}
       </ThemeProvider>
     </NuqsAdapter>
   )
