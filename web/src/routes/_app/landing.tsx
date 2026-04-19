@@ -39,7 +39,7 @@ type ModulePlan = {
 const benefits = [
   {
     title: 'Direct state-to-local connection',
-    desc: 'TerrasyncSRM creates a direct operational bridge between the state registry and your local system instead of forcing teams to reconcile data in disconnected spreadsheets.',
+    desc: 'TerrasyncCRM creates a direct operational bridge between the state registry and your local system instead of forcing teams to reconcile data in disconnected spreadsheets.',
   },
   {
     title: 'Anomaly detection with real workflow value',
@@ -64,7 +64,7 @@ const processSteps = [
   {
     step: '2',
     title: 'Detect and reconcile',
-    desc: 'TerrasyncSRM normalizes records, detects anomalies, surfaces conflicts, and shows exactly what must be resolved first.',
+    desc: 'TerrasyncCRM normalizes records, detects anomalies, surfaces conflicts, and shows exactly what must be resolved first.',
   },
   {
     step: '3',
@@ -185,7 +185,7 @@ const faq = [
   {
     question: 'How does the direct connection between the state registry and the local base work?',
     answer:
-      'TerrasyncSRM aligns registry records and local records in one workflow so operators can see matched entries, conflicts, and unresolved gaps without switching between disconnected tools.',
+      'TerrasyncCRM aligns registry records and local records in one workflow so operators can see matched entries, conflicts, and unresolved gaps without switching between disconnected tools.',
   },
   {
     question: 'What kinds of anomalies can the platform detect?',
@@ -198,7 +198,7 @@ const faq = [
       'Teams can generate discrepancy reports, anomaly summaries, workload snapshots, and management-ready integrity reports directly from the synchronized dataset.',
   },
   {
-    question: 'How is tax calculation supported in TerrasyncSRM?',
+    question: 'How is tax calculation supported in TerrasyncCRM?',
     answer:
       'Tax calculation uses synchronized land and realty records as the operational base, helping municipalities estimate tax-sensitive scenarios after the data has been reconciled.',
   },
@@ -210,7 +210,7 @@ const faq = [
   {
     question: 'Which file formats can be imported into the platform?',
     answer:
-      'TerrasyncSRM supports .csv, .xls, and .xlsx uploads up to 50 MB with preview, validation checks, and processing statistics.',
+      'TerrasyncCRM supports .csv, .xls, and .xlsx uploads up to 50 MB with preview, validation checks, and processing statistics.',
   },
 ]
 
@@ -246,7 +246,7 @@ function MinimalistLanding() {
           <h1 className="mb-10 font-serif text-6xl leading-none tracking-tighter md:text-8xl lg:text-9xl">
             Terrasync
             <br />
-            <span className="font-light italic">SRM.</span>
+            <span className="font-light italic">CRM.</span>
           </h1>
           <div className="grid grid-cols-1 items-end gap-8 md:grid-cols-12">
             <div className="md:col-span-8">
@@ -316,7 +316,7 @@ function MinimalistLanding() {
           </div>
 
           <div className="mb-24 text-center">
-            <h2 className="mb-6 font-serif text-5xl tracking-tight md:text-6xl">How TerrasyncSRM works</h2>
+            <h2 className="mb-6 font-serif text-5xl tracking-tight md:text-6xl">How TerrasyncCRM works</h2>
             <p className="text-xl text-[#525252]">
               From source connection to reporting and tax-oriented review in three steps.
             </p>
