@@ -11,6 +11,7 @@ import { Switch } from '@/components/ui/switch'
 import { Label } from '@/components/ui/label'
 import { toast } from 'sonner'
 import { anomaliesColumns } from './anomalies-columns'
+import { AnomalyDetailsDialog } from './anomaly-details-dialog'
 
 const DEFAULT_PAGE_SIZE = 15
 const PAGE_SIZE_OPTIONS = [10, 15, 25, 50]
@@ -19,6 +20,8 @@ export function AnomaliesPage() {
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE)
   const [hideResolved, setHideResolved] = useState(true)
+  const [detailsOpen, setDetailsOpen] = useState(false)
+  const [selectedAnomalyId, setSelectedAnomalyId] = useState<number | null>(null)
 
   const query = useAnomaliesList(page, pageSize, hideResolved)
   const generateMutation = useGenerateAnomalyReport()
@@ -98,7 +101,15 @@ export function AnomaliesPage() {
                 <Skeleton className="h-8 w-[70%]" />
               </div>
             ) : (
-              <DataTable columns={anomaliesColumns} data={query.data?.items ?? []} showPaginationControls={false} />
+              <DataTable
+                columns={anomaliesColumns}
+                data={query.data?.items ?? []}
+                showPaginationControls={false}
+                onRowClick={(row) => {
+                  setSelectedAnomalyId(row.id)
+                  setDetailsOpen(true)
+                }}
+              />
             )}
           </div>
         </section>
@@ -161,6 +172,17 @@ export function AnomaliesPage() {
           </div>
         </div>
       </main>
+
+      <AnomalyDetailsDialog
+        open={detailsOpen}
+        anomalyId={selectedAnomalyId}
+        onOpenChange={(open) => {
+          setDetailsOpen(open)
+          if (!open) {
+            setSelectedAnomalyId(null)
+          }
+        }}
+      />
     </div>
   )
 }
