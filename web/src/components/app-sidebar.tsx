@@ -1,7 +1,17 @@
 import * as React from 'react'
 import { Link, useRouterState } from '@tanstack/react-router'
 import { useTheme } from 'next-themes'
-import { FileUp, GitCompare, Globe2, Landmark, LayoutDashboardIcon, LogOut, Moon, Sun } from 'lucide-react'
+import {
+  FileUp,
+  GitCompare,
+  Globe2,
+  Landmark,
+  LayoutDashboardIcon,
+  LogOut,
+  AlertTriangle,
+  Moon,
+  Sun,
+} from 'lucide-react'
 
 import { ModeToggle } from '@/components/mode-toggle'
 import { Button } from '@/components/ui/button'
@@ -31,6 +41,7 @@ const navigationItems: NavigationItem[] = [
   { label: 'Global Registry', to: '/global-registry/land', activePrefix: '/global-registry', icon: Globe2 },
   { label: 'Local Registry', to: '/local-registry/land', activePrefix: '/local-registry', icon: Landmark },
   { label: 'Diff', to: '/diff/land', activePrefix: '/diff', icon: GitCompare },
+  { label: 'Anomalies', to: '/anomalies', activePrefix: '/anomalies', icon: AlertTriangle },
   { label: 'Upload File', to: '/upload_file', icon: FileUp },
 ]
 

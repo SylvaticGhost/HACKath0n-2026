@@ -15,6 +15,7 @@ import { Route as AppUpload_fileRouteImport } from './routes/_app/upload_file'
 import { Route as AppTableRouteImport } from './routes/_app/table'
 import { Route as AppRequestsRouteImport } from './routes/_app/requests'
 import { Route as AppDragAndDropRouteImport } from './routes/_app/drag-and-drop'
+import { Route as AppAnomaliesRouteImport } from './routes/_app/anomalies'
 import { Route as AppLocalRegistryRealtyRouteImport } from './routes/_app/local-registry/realty'
 import { Route as AppLocalRegistryLandRouteImport } from './routes/_app/local-registry/land'
 import { Route as AppGlobalRegistryRealtyRouteImport } from './routes/_app/global-registry/realty'
@@ -51,6 +52,11 @@ const AppDragAndDropRoute = AppDragAndDropRouteImport.update({
   path: '/drag-and-drop',
   getParentRoute: () => AppRouteRoute,
 } as any)
+const AppAnomaliesRoute = AppAnomaliesRouteImport.update({
+  id: '/anomalies',
+  path: '/anomalies',
+  getParentRoute: () => AppRouteRoute,
+} as any)
 const AppLocalRegistryRealtyRoute = AppLocalRegistryRealtyRouteImport.update({
   id: '/local-registry/realty',
   path: '/local-registry/realty',
@@ -84,6 +90,7 @@ const AppDiffLandRoute = AppDiffLandRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
+  '/anomalies': typeof AppAnomaliesRoute
   '/drag-and-drop': typeof AppDragAndDropRoute
   '/requests': typeof AppRequestsRoute
   '/table': typeof AppTableRoute
@@ -96,6 +103,7 @@ export interface FileRoutesByFullPath {
   '/local-registry/realty': typeof AppLocalRegistryRealtyRoute
 }
 export interface FileRoutesByTo {
+  '/anomalies': typeof AppAnomaliesRoute
   '/drag-and-drop': typeof AppDragAndDropRoute
   '/requests': typeof AppRequestsRoute
   '/table': typeof AppTableRoute
@@ -111,6 +119,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_app': typeof AppRouteRouteWithChildren
+  '/_app/anomalies': typeof AppAnomaliesRoute
   '/_app/drag-and-drop': typeof AppDragAndDropRoute
   '/_app/requests': typeof AppRequestsRoute
   '/_app/table': typeof AppTableRoute
@@ -127,6 +136,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/anomalies'
     | '/drag-and-drop'
     | '/requests'
     | '/table'
@@ -139,6 +149,7 @@ export interface FileRouteTypes {
     | '/local-registry/realty'
   fileRoutesByTo: FileRoutesByTo
   to:
+    | '/anomalies'
     | '/drag-and-drop'
     | '/requests'
     | '/table'
@@ -153,6 +164,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/_app'
+    | '/_app/anomalies'
     | '/_app/drag-and-drop'
     | '/_app/requests'
     | '/_app/table'
@@ -214,6 +226,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppDragAndDropRouteImport
       parentRoute: typeof AppRouteRoute
     }
+    '/_app/anomalies': {
+      id: '/_app/anomalies'
+      path: '/anomalies'
+      fullPath: '/anomalies'
+      preLoaderRoute: typeof AppAnomaliesRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
     '/_app/local-registry/realty': {
       id: '/_app/local-registry/realty'
       path: '/local-registry/realty'
@@ -260,6 +279,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface AppRouteRouteChildren {
+  AppAnomaliesRoute: typeof AppAnomaliesRoute
   AppDragAndDropRoute: typeof AppDragAndDropRoute
   AppRequestsRoute: typeof AppRequestsRoute
   AppTableRoute: typeof AppTableRoute
@@ -274,6 +294,7 @@ interface AppRouteRouteChildren {
 }
 
 const AppRouteRouteChildren: AppRouteRouteChildren = {
+  AppAnomaliesRoute: AppAnomaliesRoute,
   AppDragAndDropRoute: AppDragAndDropRoute,
   AppRequestsRoute: AppRequestsRoute,
   AppTableRoute: AppTableRoute,
