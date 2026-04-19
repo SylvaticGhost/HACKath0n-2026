@@ -14,5 +14,5 @@ import { RealtyTaxView } from './entities/realty-tax.view'
   imports: [TypeOrmModule.forFeature([RealtyCrm, LandCrm, LandTaxView, RealtyTaxView, Anomaly])],
   controllers: [CrmController, AnomalyController],
   providers: [CrmService, AnomalyService],
-
+})
 export class CrmModule {}
