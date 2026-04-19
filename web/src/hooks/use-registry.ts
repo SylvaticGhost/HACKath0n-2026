@@ -1,11 +1,13 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query'
-import { fetchApi } from '../shared/api/client'
+import { fetchApi, fetchApiBlob } from '../shared/api/client'
 import type {
   LandCrmDto,
   LandRegistryDto,
+  LandSearchDto,
   PaginatedList,
   RealtyCrmDto,
   RealtyRegistryDto,
+  RealtySearchDto,
   UpdateLandCrmDto,
   UpdateRealtyCrmDto,
 } from 'shared'
@@ -17,7 +19,6 @@ const LOCAL_REGISTRY_QUERY_KEY = ['registry', 'Local Registry'] as const
 
 interface UseRegistryListOptions {
   scope: RegistryScope
-  location?: string
   enabled?: boolean
 }
 
@@ -29,38 +30,68 @@ function buildRealtyRecordPath(stateTaxId: string, ownershipRegistrationDate: st
   return `/crm/realty/${encodeURIComponent(stateTaxId)}/${encodeURIComponent(ownershipRegistrationDate)}`
 }
 
-function buildPath(basePath: string, page: number, pageSize: number, searchParam: string, location?: string) {
-  const trimmedLocation = location?.trim()
-  if (!trimmedLocation) {
-    return `${basePath}?page=${page}&pageSize=${pageSize}`
+function buildQueryString(params: Record<string, string | number | undefined>) {
+  const searchParams = new URLSearchParams()
+
+  for (const [key, value] of Object.entries(params)) {
+    if (value === undefined) {
+      continue
+    }
+
+    if (typeof value === 'string' && value.trim().length === 0) {
+      continue
+    }
+
+    searchParams.set(key, String(value))
   }
 
-  return `${basePath}/search?${searchParam}=${encodeURIComponent(trimmedLocation)}&page=${page}&pageSize=${pageSize}`
+  const queryString = searchParams.toString()
+  return queryString ? `?${queryString}` : ''
 }
 
-export function useLandRegistryList(page = 1, pageSize = 10, options: UseRegistryListOptions) {
+function buildListPath(
+  basePath: string,
+  page: number,
+  pageSize: number,
+  filters?: Record<string, string | number | undefined>,
+) {
+  return `${basePath}${buildQueryString({
+    ...(filters ?? {}),
+    page,
+    pageSize,
+  })}`
+}
+
+interface UseLandRegistryListOptions extends UseRegistryListOptions {
+  filters?: LandSearchDto
+}
+
+interface UseRealtyRegistryListOptions extends UseRegistryListOptions {
+  filters?: RealtySearchDto
+}
+
+export function useLandRegistryList(page = 1, pageSize = 10, options: UseLandRegistryListOptions) {
   const apiBase = resolveApiBase(options.scope)
-  const location = options.location?.trim() ?? ''
+  const filters = options.filters ?? {}
+  const filtersKey = JSON.stringify(filters)
 
   return useQuery({
-    queryKey: ['registry', options.scope, 'land', page, pageSize, location],
-    queryFn: () =>
-      fetchApi<PaginatedList<LandRegistryDto>>(buildPath(`${apiBase}/land`, page, pageSize, 'location', location)),
+    queryKey: ['registry', options.scope, 'land', page, pageSize, filtersKey],
+    queryFn: () => fetchApi<PaginatedList<LandRegistryDto>>(buildListPath(`${apiBase}/land`, page, pageSize, filters)),
     placeholderData: keepPreviousData,
     enabled: options.enabled,
   })
 }
 
-export function useRealtyRegistryList(page = 1, pageSize = 10, options: UseRegistryListOptions) {
+export function useRealtyRegistryList(page = 1, pageSize = 10, options: UseRealtyRegistryListOptions) {
   const apiBase = resolveApiBase(options.scope)
-  const location = options.location?.trim() ?? ''
+  const filters = options.filters ?? {}
+  const filtersKey = JSON.stringify(filters)
 
   return useQuery({
-    queryKey: ['registry', options.scope, 'realty', page, pageSize, location],
+    queryKey: ['registry', options.scope, 'realty', page, pageSize, filtersKey],
     queryFn: () =>
-      fetchApi<PaginatedList<RealtyRegistryDto>>(
-        buildPath(`${apiBase}/realty`, page, pageSize, 'objectAddress', location),
-      ),
+      fetchApi<PaginatedList<RealtyRegistryDto>>(buildListPath(`${apiBase}/realty`, page, pageSize, filters)),
     placeholderData: keepPreviousData,
     enabled: options.enabled,
   })
@@ -250,6 +281,19 @@ export function useClearCrmData() {
       }),
     onSuccess: async () => {
       await invalidateLocalRegistryQueries(queryClient)
+    },
+  })
+}
+
+type RegistryExportParams =
+  | { entity: 'Land'; filters?: LandSearchDto }
+  | { entity: 'Realty'; filters?: RealtySearchDto }
+
+export function useExportRegistry() {
+  return useMutation({
+    mutationFn: ({ entity, filters }: RegistryExportParams) => {
+      const path = entity === 'Land' ? '/crm/land/export' : '/crm/realty/export'
+      return fetchApiBlob(path + buildQueryString((filters ?? {}) as Record<string, string | number | undefined>))
     },
   })
 }

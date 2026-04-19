@@ -4,6 +4,7 @@ import type { LandRegistryDto, LandSearchDto, PaginatedList, RealtyRegistryDto, 
 import { EntityManager } from 'typeorm'
 import { LandRegistry } from './entities/land.registry.entity'
 import { RealtyRegistry } from './entities/realty.registry.entity'
+import { LAND_REGISTRY_SORT_COLUMNS, REALTY_REGISTRY_SORT_COLUMNS } from './registry-sorting'
 
 @Injectable()
 export class RegistryService {
@@ -109,8 +110,11 @@ export class RegistryService {
       query.andWhere('land.estimateValue <= :estimateValueMax', { estimateValueMax: params.estimateValueMax })
     }
 
+    const sortColumn = params.sortBy ? LAND_REGISTRY_SORT_COLUMNS[params.sortBy] : 'land.cadastralNumber'
+    const sortOrder = params.sortOrder === 'desc' ? 'DESC' : 'ASC'
+
     const [items, totalItems] = await query
-      .orderBy('land.cadastralNumber', 'ASC')
+      .orderBy(sortColumn, sortOrder)
       .skip((page - 1) * pageSize)
       .take(pageSize)
       .getManyAndCount()
@@ -182,9 +186,15 @@ export class RegistryService {
       query.andWhere('realty.ownershipShare <= :ownershipShareMax', { ownershipShareMax: params.ownershipShareMax })
     }
 
+    const sortColumn = params.sortBy ? REALTY_REGISTRY_SORT_COLUMNS[params.sortBy] : 'realty.stateTaxId'
+    const sortOrder = params.sortOrder === 'desc' ? 'DESC' : 'ASC'
+
     const [items, totalItems] = await query
-      .orderBy('realty.stateTaxId', 'ASC')
-      .addOrderBy('realty.ownershipRegistrationDate', 'ASC')
+      .orderBy(sortColumn, sortOrder)
+      .addOrderBy(
+        'realty.ownershipRegistrationDate',
+        sortColumn === 'realty.ownershipRegistrationDate' ? sortOrder : 'ASC',
+      )
       .skip((page - 1) * pageSize)
       .take(pageSize)
       .getManyAndCount()

@@ -1,13 +1,25 @@
-import type { ColumnDef } from '@tanstack/react-table'
+import type { ColumnDef, ColumnFiltersState, SortingState } from '@tanstack/react-table'
 import { Link } from '@tanstack/react-router'
 import { useEffect, useId, useMemo, useState } from 'react'
-import { Building2, ChevronLeft, ChevronRight, Loader2, MapPinned, Plus, Search, Trash2 } from 'lucide-react'
-import type { LandRegistryDto, RealtyRegistryDto } from 'shared'
+import {
+  Building2,
+  ChevronLeft,
+  ChevronRight,
+  Download,
+  Loader2,
+  MapPinned,
+  Plus,
+  RotateCcw,
+  Search,
+  Trash2,
+} from 'lucide-react'
+import type { LandRegistryDto, LandSearchDto, RealtyRegistryDto, RealtySearchDto } from 'shared'
 
 import {
   useClearCrmData,
   useDeleteLandCrmRecord,
   useDeleteRealtyCrmRecord,
+  useExportRegistry,
   useLandRegistryList,
   useRealtyRegistryList,
   useRegistryInvalidCount,
@@ -23,6 +35,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Skeleton } from '@/components/ui/skeleton'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { cn } from '@/lib/utils'
+import { toast } from 'sonner'
 import { getRequestErrorMessage, toDateInputValue } from './crm-form-utils'
 import { LandCrmDialog } from './land-crm-dialog'
 import { landColumns } from './land-columns'
@@ -39,6 +52,57 @@ interface RegistryPageProps {
 const DEFAULT_PAGE_SIZE = 15
 const PAGE_SIZE_OPTIONS = [10, 15, 25, 50]
 
+type SortOrder = 'asc' | 'desc'
+type LandSortField =
+  | 'cadastralNumber'
+  | 'location'
+  | 'square'
+  | 'estimateValue'
+  | 'stateTaxId'
+  | 'user'
+  | 'stateRegistrationDate'
+type RealtySortField =
+  | 'stateTaxId'
+  | 'ownershipRegistrationDate'
+  | 'taxpayerName'
+  | 'objectAddress'
+  | 'totalArea'
+  | 'ownershipShare'
+
+interface RangeColumnFilterValue {
+  min?: string
+  max?: string
+}
+
+interface LandFilterFormState {
+  cadastralNumber: string
+  stateTaxId: string
+  user: string
+  squareMin: string
+  squareMax: string
+  estimateValueMin: string
+  estimateValueMax: string
+}
+
+interface RealtyFilterFormState {
+  stateTaxId: string
+  taxpayerName: string
+  totalAreaMin: string
+  totalAreaMax: string
+  ownershipShareMin: string
+  ownershipShareMax: string
+}
+
+interface LandSortState {
+  sortBy: LandSortField
+  sortOrder: SortOrder
+}
+
+interface RealtySortState {
+  sortBy: RealtySortField
+  sortOrder: SortOrder
+}
+
 interface LandDialogState {
   open: boolean
   mode: 'create' | 'edit'
@@ -51,16 +115,222 @@ interface RealtyDialogState {
   recordKey: { stateTaxId: string; ownershipRegistrationDate: string } | null
 }
 
-const initialLandDialogState: LandDialogState = {
-  open: false,
-  mode: 'create',
-  cadastralNumber: null,
+type StateUpdater<T> = T | ((previousState: T) => T)
+
+const initialLandFilterState: LandFilterFormState = {
+  cadastralNumber: '',
+  stateTaxId: '',
+  user: '',
+  squareMin: '',
+  squareMax: '',
+  estimateValueMin: '',
+  estimateValueMax: '',
 }
 
-const initialRealtyDialogState: RealtyDialogState = {
-  open: false,
-  mode: 'create',
-  recordKey: null,
+const initialRealtyFilterState: RealtyFilterFormState = {
+  stateTaxId: '',
+  taxpayerName: '',
+  totalAreaMin: '',
+  totalAreaMax: '',
+  ownershipShareMin: '',
+  ownershipShareMax: '',
+}
+
+const initialLandSortState: LandSortState = { sortBy: 'cadastralNumber', sortOrder: 'asc' }
+const initialRealtySortState: RealtySortState = { sortBy: 'stateTaxId', sortOrder: 'asc' }
+const initialLandDialogState: LandDialogState = { open: false, mode: 'create', cadastralNumber: null }
+const initialRealtyDialogState: RealtyDialogState = { open: false, mode: 'create', recordKey: null }
+
+function parseOptionalNumber(value: string) {
+  const trimmedValue = value.trim()
+  if (!trimmedValue) {
+    return undefined
+  }
+
+  const parsedValue = Number(trimmedValue)
+  return Number.isFinite(parsedValue) ? parsedValue : undefined
+}
+
+function hasTextValue(value: string) {
+  return value.trim().length > 0
+}
+
+function resolveNextState<T>(updater: StateUpdater<T>, previousState: T) {
+  return typeof updater === 'function' ? (updater as (previousState: T) => T)(previousState) : updater
+}
+
+function toRangeFilterValue(value: unknown): RangeColumnFilterValue {
+  if (!value || typeof value !== 'object') {
+    return {}
+  }
+
+  const candidate = value as RangeColumnFilterValue
+  return {
+    min: typeof candidate.min === 'string' ? candidate.min : '',
+    max: typeof candidate.max === 'string' ? candidate.max : '',
+  }
+}
+
+function buildLandColumnFilters(filters: LandFilterFormState): ColumnFiltersState {
+  const columnFilters: ColumnFiltersState = []
+
+  if (hasTextValue(filters.cadastralNumber)) {
+    columnFilters.push({ id: 'cadastralNumber', value: filters.cadastralNumber })
+  }
+
+  if (hasTextValue(filters.stateTaxId)) {
+    columnFilters.push({ id: 'stateTaxId', value: filters.stateTaxId })
+  }
+
+  if (hasTextValue(filters.user)) {
+    columnFilters.push({ id: 'user', value: filters.user })
+  }
+
+  if (hasTextValue(filters.squareMin) || hasTextValue(filters.squareMax)) {
+    columnFilters.push({
+      id: 'square',
+      value: {
+        min: filters.squareMin,
+        max: filters.squareMax,
+      },
+    })
+  }
+
+  if (hasTextValue(filters.estimateValueMin) || hasTextValue(filters.estimateValueMax)) {
+    columnFilters.push({
+      id: 'estimateValue',
+      value: {
+        min: filters.estimateValueMin,
+        max: filters.estimateValueMax,
+      },
+    })
+  }
+
+  return columnFilters
+}
+
+function buildRealtyColumnFilters(filters: RealtyFilterFormState): ColumnFiltersState {
+  const columnFilters: ColumnFiltersState = []
+
+  if (hasTextValue(filters.stateTaxId)) {
+    columnFilters.push({ id: 'stateTaxId', value: filters.stateTaxId })
+  }
+
+  if (hasTextValue(filters.taxpayerName)) {
+    columnFilters.push({ id: 'taxpayerName', value: filters.taxpayerName })
+  }
+
+  if (hasTextValue(filters.totalAreaMin) || hasTextValue(filters.totalAreaMax)) {
+    columnFilters.push({
+      id: 'totalArea',
+      value: {
+        min: filters.totalAreaMin,
+        max: filters.totalAreaMax,
+      },
+    })
+  }
+
+  if (hasTextValue(filters.ownershipShareMin) || hasTextValue(filters.ownershipShareMax)) {
+    columnFilters.push({
+      id: 'ownershipShare',
+      value: {
+        min: filters.ownershipShareMin,
+        max: filters.ownershipShareMax,
+      },
+    })
+  }
+
+  return columnFilters
+}
+
+function mapLandColumnFilters(columnFilters: ColumnFiltersState): LandFilterFormState {
+  const nextState = { ...initialLandFilterState }
+
+  for (const filter of columnFilters) {
+    switch (filter.id) {
+      case 'cadastralNumber':
+        nextState.cadastralNumber = typeof filter.value === 'string' ? filter.value : ''
+        break
+      case 'stateTaxId':
+        nextState.stateTaxId = typeof filter.value === 'string' ? filter.value : ''
+        break
+      case 'user':
+        nextState.user = typeof filter.value === 'string' ? filter.value : ''
+        break
+      case 'square': {
+        const rangeValue = toRangeFilterValue(filter.value)
+        nextState.squareMin = rangeValue.min ?? ''
+        nextState.squareMax = rangeValue.max ?? ''
+        break
+      }
+      case 'estimateValue': {
+        const rangeValue = toRangeFilterValue(filter.value)
+        nextState.estimateValueMin = rangeValue.min ?? ''
+        nextState.estimateValueMax = rangeValue.max ?? ''
+        break
+      }
+      default:
+        break
+    }
+  }
+
+  return nextState
+}
+
+function mapRealtyColumnFilters(columnFilters: ColumnFiltersState): RealtyFilterFormState {
+  const nextState = { ...initialRealtyFilterState }
+
+  for (const filter of columnFilters) {
+    switch (filter.id) {
+      case 'stateTaxId':
+        nextState.stateTaxId = typeof filter.value === 'string' ? filter.value : ''
+        break
+      case 'taxpayerName':
+        nextState.taxpayerName = typeof filter.value === 'string' ? filter.value : ''
+        break
+      case 'totalArea': {
+        const rangeValue = toRangeFilterValue(filter.value)
+        nextState.totalAreaMin = rangeValue.min ?? ''
+        nextState.totalAreaMax = rangeValue.max ?? ''
+        break
+      }
+      case 'ownershipShare': {
+        const rangeValue = toRangeFilterValue(filter.value)
+        nextState.ownershipShareMin = rangeValue.min ?? ''
+        nextState.ownershipShareMax = rangeValue.max ?? ''
+        break
+      }
+      default:
+        break
+    }
+  }
+
+  return nextState
+}
+
+function countLandActiveFilters(filters: LandFilterFormState, searchValue: string) {
+  return [
+    searchValue,
+    filters.cadastralNumber,
+    filters.stateTaxId,
+    filters.user,
+    filters.squareMin,
+    filters.squareMax,
+    filters.estimateValueMin,
+    filters.estimateValueMax,
+  ].filter(hasTextValue).length
+}
+
+function countRealtyActiveFilters(filters: RealtyFilterFormState, searchValue: string) {
+  return [
+    searchValue,
+    filters.stateTaxId,
+    filters.taxpayerName,
+    filters.totalAreaMin,
+    filters.totalAreaMax,
+    filters.ownershipShareMin,
+    filters.ownershipShareMax,
+  ].filter(hasTextValue).length
 }
 
 export function RegistryPage({ scope, entity }: RegistryPageProps) {
@@ -68,6 +338,10 @@ export function RegistryPage({ scope, entity }: RegistryPageProps) {
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE)
   const [locationInput, setLocationInput] = useState('')
   const [searchValue, setSearchValue] = useState('')
+  const [landFilters, setLandFilters] = useState<LandFilterFormState>(initialLandFilterState)
+  const [realtyFilters, setRealtyFilters] = useState<RealtyFilterFormState>(initialRealtyFilterState)
+  const [landSortState, setLandSortState] = useState<LandSortState>(initialLandSortState)
+  const [realtySortState, setRealtySortState] = useState<RealtySortState>(initialRealtySortState)
   const [landDialogState, setLandDialogState] = useState<LandDialogState>(initialLandDialogState)
   const [realtyDialogState, setRealtyDialogState] = useState<RealtyDialogState>(initialRealtyDialogState)
   const [landDeleteTarget, setLandDeleteTarget] = useState<LandRegistryDto | null>(null)
@@ -82,13 +356,22 @@ export function RegistryPage({ scope, entity }: RegistryPageProps) {
   const isLocalScope = scope === 'Local Registry'
   const landRoute = scope === 'Global Registry' ? '/global-registry/land' : '/local-registry/land'
   const realtyRoute = scope === 'Global Registry' ? '/global-registry/realty' : '/local-registry/realty'
+  const diffRoute = isLand ? '/diff/land' : '/diff/realty'
 
   const landDeleteMutation = useDeleteLandCrmRecord()
   const realtyDeleteMutation = useDeleteRealtyCrmRecord()
   const clearCrmMutation = useClearCrmData()
+  const exportRegistryMutation = useExportRegistry()
 
   useEffect(() => {
     setPage(1)
+    setPageSize(DEFAULT_PAGE_SIZE)
+    setLocationInput('')
+    setSearchValue('')
+    setLandFilters(initialLandFilterState)
+    setRealtyFilters(initialRealtyFilterState)
+    setLandSortState(initialLandSortState)
+    setRealtySortState(initialRealtySortState)
     setLandDialogState(initialLandDialogState)
     setRealtyDialogState(initialRealtyDialogState)
     setLandDeleteTarget(null)
@@ -107,18 +390,47 @@ export function RegistryPage({ scope, entity }: RegistryPageProps) {
     return () => window.clearTimeout(timeoutId)
   }, [locationInput])
 
+  const landSearchFilters = useMemo<LandSearchDto>(
+    () => ({
+      cadastralNumber: landFilters.cadastralNumber || undefined,
+      stateTaxId: landFilters.stateTaxId || undefined,
+      user: landFilters.user || undefined,
+      location: searchValue || undefined,
+      squareMin: parseOptionalNumber(landFilters.squareMin),
+      squareMax: parseOptionalNumber(landFilters.squareMax),
+      estimateValueMin: parseOptionalNumber(landFilters.estimateValueMin),
+      estimateValueMax: parseOptionalNumber(landFilters.estimateValueMax),
+      sortBy: landSortState.sortBy,
+      sortOrder: landSortState.sortOrder,
+    }),
+    [landFilters, landSortState, searchValue],
+  )
+
+  const realtySearchFilters = useMemo<RealtySearchDto>(
+    () => ({
+      stateTaxId: realtyFilters.stateTaxId || undefined,
+      taxpayerName: realtyFilters.taxpayerName || undefined,
+      objectAddress: searchValue || undefined,
+      totalAreaMin: parseOptionalNumber(realtyFilters.totalAreaMin),
+      totalAreaMax: parseOptionalNumber(realtyFilters.totalAreaMax),
+      ownershipShareMin: parseOptionalNumber(realtyFilters.ownershipShareMin),
+      ownershipShareMax: parseOptionalNumber(realtyFilters.ownershipShareMax),
+      sortBy: realtySortState.sortBy,
+      sortOrder: realtySortState.sortOrder,
+    }),
+    [realtyFilters, realtySortState, searchValue],
+  )
+
+  const activeQuerySignature = isLand ? JSON.stringify(landSearchFilters) : JSON.stringify(realtySearchFilters)
+
   useEffect(() => {
     setPage(1)
-  }, [searchValue])
+  }, [activeQuerySignature])
 
-  const landQuery = useLandRegistryList(page, pageSize, {
-    scope,
-    location: searchValue,
-    enabled: isLand,
-  })
+  const landQuery = useLandRegistryList(page, pageSize, { scope, filters: landSearchFilters, enabled: isLand })
   const realtyQuery = useRealtyRegistryList(page, pageSize, {
     scope,
-    location: searchValue,
+    filters: realtySearchFilters,
     enabled: !isLand,
   })
   const activeQuery = isLand ? landQuery : realtyQuery
@@ -146,6 +458,58 @@ export function RegistryPage({ scope, entity }: RegistryPageProps) {
 
     return Array.from({ length: lastVisible - start + 1 }, (_, index) => start + index)
   }, [page, totalPages])
+
+  const landSorting = useMemo<SortingState>(
+    () => [{ id: landSortState.sortBy, desc: landSortState.sortOrder === 'desc' }],
+    [landSortState],
+  )
+  const realtySorting = useMemo<SortingState>(
+    () => [{ id: realtySortState.sortBy, desc: realtySortState.sortOrder === 'desc' }],
+    [realtySortState],
+  )
+
+  const landColumnFilters = useMemo(() => buildLandColumnFilters(landFilters), [landFilters])
+  const realtyColumnFilters = useMemo(() => buildRealtyColumnFilters(realtyFilters), [realtyFilters])
+
+  function handleLandSortingChange(updater: StateUpdater<SortingState>) {
+    const nextSorting = resolveNextState(updater, landSorting)
+    const nextSort = nextSorting[0]
+
+    if (!nextSort) {
+      setLandSortState(initialLandSortState)
+      return
+    }
+
+    setLandSortState({
+      sortBy: nextSort.id as LandSortField,
+      sortOrder: nextSort.desc ? 'desc' : 'asc',
+    })
+  }
+
+  function handleRealtySortingChange(updater: StateUpdater<SortingState>) {
+    const nextSorting = resolveNextState(updater, realtySorting)
+    const nextSort = nextSorting[0]
+
+    if (!nextSort) {
+      setRealtySortState(initialRealtySortState)
+      return
+    }
+
+    setRealtySortState({
+      sortBy: nextSort.id as RealtySortField,
+      sortOrder: nextSort.desc ? 'desc' : 'asc',
+    })
+  }
+
+  function handleLandColumnFiltersChange(updater: StateUpdater<ColumnFiltersState>) {
+    const nextColumnFilters = resolveNextState(updater, landColumnFilters)
+    setLandFilters(mapLandColumnFilters(nextColumnFilters))
+  }
+
+  function handleRealtyColumnFiltersChange(updater: StateUpdater<ColumnFiltersState>) {
+    const nextColumnFilters = resolveNextState(updater, realtyColumnFilters)
+    setRealtyFilters(mapRealtyColumnFilters(nextColumnFilters))
+  }
 
   const landTableColumns = useMemo<ColumnDef<LandRegistryDto>[]>(() => {
     if (!isLocalScope) {
@@ -220,6 +584,36 @@ export function RegistryPage({ scope, entity }: RegistryPageProps) {
     ]
   }, [isLocalScope])
 
+  const activeFilterCount = isLand
+    ? countLandActiveFilters(landFilters, searchValue)
+    : countRealtyActiveFilters(realtyFilters, searchValue)
+  const hasNonDefaultSorting = isLand
+    ? landSortState.sortBy !== initialLandSortState.sortBy || landSortState.sortOrder !== initialLandSortState.sortOrder
+    : realtySortState.sortBy !== initialRealtySortState.sortBy ||
+      realtySortState.sortOrder !== initialRealtySortState.sortOrder
+  const canResetFilters = activeFilterCount > 0 || hasNonDefaultSorting
+
+  async function handleExport() {
+    try {
+      const blob = await exportRegistryMutation.mutateAsync(
+        isLand ? { entity: 'Land', filters: landSearchFilters } : { entity: 'Realty', filters: realtySearchFilters },
+      )
+
+      const downloadUrl = window.URL.createObjectURL(blob)
+      const anchor = document.createElement('a')
+      anchor.href = downloadUrl
+      anchor.download = isLand ? 'land.xlsx' : 'realty.xlsx'
+      document.body.appendChild(anchor)
+      anchor.click()
+      anchor.remove()
+      window.URL.revokeObjectURL(downloadUrl)
+
+      toast.success(`${entity} export downloaded`)
+    } catch (error) {
+      toast.error(getRequestErrorMessage(error, `Failed to export ${entity.toLowerCase()} records`))
+    }
+  }
+
   async function handleLandDelete() {
     if (!landDeleteTarget) {
       return
@@ -265,6 +659,102 @@ export function RegistryPage({ scope, entity }: RegistryPageProps) {
     }
   }
 
+  function handleResetAll() {
+    setLocationInput('')
+    setSearchValue('')
+    setLandFilters(initialLandFilterState)
+    setRealtyFilters(initialRealtyFilterState)
+    setLandSortState(initialLandSortState)
+    setRealtySortState(initialRealtySortState)
+  }
+
+  const tableToolbar = (
+    <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+      <div className="flex flex-1 flex-col gap-2 lg:flex-row lg:items-center">
+        <div className="relative min-w-0 lg:w-72">
+          <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            value={locationInput}
+            onChange={(event) => setLocationInput(event.target.value)}
+            list={datalistId}
+            placeholder={isLand ? 'Search location' : 'Search address'}
+            className="h-8 rounded-full border-border/40 bg-background pl-9 text-xs shadow-none"
+          />
+          <datalist id={datalistId}>
+            {locationSuggestions.map((value) => (
+              <option key={value} value={value} />
+            ))}
+          </datalist>
+        </div>
+
+        {canResetFilters ? (
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="h-8 rounded-full px-3 text-xs"
+            onClick={handleResetAll}
+          >
+            <RotateCcw className="mr-2 size-3.5" />
+            Reset {activeFilterCount > 0 ? `(${activeFilterCount})` : ''}
+          </Button>
+        ) : null}
+      </div>
+
+      {isLocalScope ? (
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-8 rounded-full px-3 text-xs shadow-none"
+            onClick={handleExport}
+            disabled={exportRegistryMutation.isPending || totalItems === 0}
+          >
+            {exportRegistryMutation.isPending ? (
+              <Loader2 className="mr-2 size-3.5 animate-spin" />
+            ) : (
+              <Download className="mr-2 size-3.5" />
+            )}
+            Export XLSX
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-8 rounded-full px-3 text-xs shadow-none"
+            onClick={() => {
+              if (isLand) {
+                setLandDialogState({ open: true, mode: 'create', cadastralNumber: null })
+                return
+              }
+
+              setRealtyDialogState({ open: true, mode: 'create', recordKey: null })
+            }}
+          >
+            <Plus className="mr-2 size-3.5" />
+            Create
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 rounded-full px-3 text-xs text-destructive hover:bg-destructive/10"
+            onClick={() => {
+              setClearActionError(null)
+              setClearDialogOpen(true)
+            }}
+            disabled={clearCrmMutation.isPending}
+          >
+            {clearCrmMutation.isPending ? (
+              <Loader2 className="mr-2 size-3.5 animate-spin" />
+            ) : (
+              <Trash2 className="mr-2 size-3.5" />
+            )}
+            Clear Data
+          </Button>
+        </div>
+      ) : null}
+    </div>
+  )
+
   return (
     <TooltipProvider delayDuration={200}>
       <div className="mx-auto flex w-full max-w-310 flex-col gap-4">
@@ -298,83 +788,22 @@ export function RegistryPage({ scope, entity }: RegistryPageProps) {
                 </Link>
               </div>
 
-              <div className="relative min-w-0 md:w-60">
-                <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  value={locationInput}
-                  onChange={(event) => setLocationInput(event.target.value)}
-                  list={datalistId}
-                  placeholder={isLand ? 'Search location' : 'Search address'}
-                  className="h-8 rounded-md border-0 bg-transparent pl-9 text-xs shadow-none ring-1 ring-border/30 focus-visible:ring-border/60 focus-visible:ring-offset-0"
-                />
-                <datalist id={datalistId}>
-                  {locationSuggestions.map((value) => (
-                    <option key={value} value={value} />
-                  ))}
-                </datalist>
+              <div className="flex items-center gap-3">
+                <div className="text-xs text-muted-foreground">
+                  Errors: <span className="font-medium text-destructive">{invalidCountQuery.data ?? 0}</span>
+                </div>
+                <Link to={diffRoute} className="text-xs text-muted-foreground transition-colors hover:text-foreground">
+                  To diff
+                </Link>
               </div>
             </div>
           </div>
 
           <div className="space-y-3 px-2">
-            {isLocalScope ? (
-              <div className="flex flex-wrap items-center justify-end gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="h-8 rounded-full px-3 text-xs shadow-none"
-                  onClick={() => {
-                    if (isLand) {
-                      setLandDialogState({
-                        open: true,
-                        mode: 'create',
-                        cadastralNumber: null,
-                      })
-                      return
-                    }
-
-                    setRealtyDialogState({
-                      open: true,
-                      mode: 'create',
-                      recordKey: null,
-                    })
-                  }}
-                >
-                  <Plus className="size-3.5" />
-                  {isLand ? 'Add land record' : 'Add realty record'}
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-8 rounded-full px-3 text-xs text-destructive hover:bg-destructive/10 hover:text-destructive"
-                  onClick={() => {
-                    setClearActionError(null)
-                    setClearDialogOpen(true)
-                  }}
-                  disabled={clearCrmMutation.isPending}
-                >
-                  {clearCrmMutation.isPending ? (
-                    <Loader2 className="size-3.5 animate-spin" />
-                  ) : (
-                    <Trash2 className="size-3.5" />
-                  )}
-                  Clear CRM data
-                </Button>
-              </div>
-            ) : null}
-
             <div className="flex items-baseline justify-between">
               <h1 className="text-xl font-bold tracking-tight">
                 {entity} <span className="ml-1 text-sm font-normal text-muted-foreground">{totalItems} results</span>
               </h1>
-              <div className="flex items-center gap-3">
-                <div className="text-xs text-muted-foreground">
-                  Errors: <span className="font-medium text-destructive">{invalidCountQuery.data ?? 0}</span>
-                </div>
-                <Link to="#" className="text-xs text-muted-foreground hover:text-foreground transition-colors">
-                  To dif
-                </Link>
-              </div>
             </div>
 
             {activeQuery.isError ? (
@@ -392,12 +821,26 @@ export function RegistryPage({ scope, entity }: RegistryPageProps) {
                 <Skeleton className="h-12 w-full" />
               </div>
             ) : isLand ? (
-              <DataTable columns={landTableColumns} data={landQuery.data?.items ?? []} showPaginationControls={false} />
+              <DataTable
+                columns={landTableColumns}
+                data={landQuery.data?.items ?? []}
+                showPaginationControls={false}
+                toolbar={tableToolbar}
+                sorting={landSorting}
+                onSortingChange={handleLandSortingChange}
+                columnFilters={landColumnFilters}
+                onColumnFiltersChange={handleLandColumnFiltersChange}
+              />
             ) : (
               <DataTable
                 columns={realtyTableColumns}
                 data={realtyQuery.data?.items ?? []}
                 showPaginationControls={false}
+                toolbar={tableToolbar}
+                sorting={realtySorting}
+                onSortingChange={handleRealtySortingChange}
+                columnFilters={realtyColumnFilters}
+                onColumnFiltersChange={handleRealtyColumnFiltersChange}
               />
             )}
           </div>

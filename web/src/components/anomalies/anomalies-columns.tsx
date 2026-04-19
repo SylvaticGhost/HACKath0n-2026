@@ -1,7 +1,6 @@
 import type { ColumnDef } from '@tanstack/react-table'
 import type { AnomalyDto } from 'shared'
 
-import { Badge } from '@/components/ui/badge'
 import { AnomaliesRowActions } from './anomalies-row-actions'
 import { cn } from '@/lib/utils'
 
