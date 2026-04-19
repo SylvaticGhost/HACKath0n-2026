@@ -1,4 +1,5 @@
 import { Body, Controller, Delete, Get, Param, Post, Put, Query, UsePipes } from '@nestjs/common'
+import { ApiQuery, ApiTags } from '@nestjs/swagger'
 import type {
   LandCrmDto,
   LandSearchDto,
@@ -25,6 +26,7 @@ import { CrmService } from './crm.service'
 import { Result } from 'shared'
 import { ZodValidationPipe } from '../../middleware/zod-validation.pipe'
 
+@ApiTags('crm')
 @Controller('crm')
 export class CrmController {
   constructor(private readonly crmService: CrmService) {}
@@ -32,7 +34,13 @@ export class CrmController {
   // ── Land ──────────────────────────────────────────────────────────────────
 
   @Get('land')
+  @ApiQuery({ name: 'squareMin', required: false, type: Number })
+  @ApiQuery({ name: 'squareMax', required: false, type: Number })
+  @ApiQuery({ name: 'estimateValueMin', required: false, type: Number })
+  @ApiQuery({ name: 'estimateValueMax', required: false, type: Number })
+  @ApiQuery({ name: 'validationStatus', required: false, enum: ['VALID', 'INVALID'] })
   async getLandPaginated(
+    @Query(new ZodValidationPipe(LandSearchSchema)) params: LandSearchDto,
     @Query('page') page?: string,
     @Query('pageSize') pageSize?: string,
   ): Promise<Result<PaginatedList<LandCrmDto>>> {
@@ -40,8 +48,8 @@ export class CrmController {
     if (paginationResult.isFailure()) {
       return paginationResult.mapFailure<PaginatedList<LandCrmDto>>()
     }
-
-    const data = await this.crmService.getLandPaginated(
+    const data = await this.crmService.searchLand(
+      params,
       paginationResult.strictValue.page,
       paginationResult.strictValue.pageSize,
     )
@@ -123,7 +131,13 @@ export class CrmController {
   // ── Realty ────────────────────────────────────────────────────────────────
 
   @Get('realty')
+  @ApiQuery({ name: 'totalAreaMin', required: false, type: Number })
+  @ApiQuery({ name: 'totalAreaMax', required: false, type: Number })
+  @ApiQuery({ name: 'ownershipShareMin', required: false, type: Number })
+  @ApiQuery({ name: 'ownershipShareMax', required: false, type: Number })
+  @ApiQuery({ name: 'validationStatus', required: false, enum: ['VALID', 'INVALID'] })
   async getRealtyPaginated(
+    @Query(new ZodValidationPipe(RealtySearchSchema)) params: RealtySearchDto,
     @Query('page') page?: string,
     @Query('pageSize') pageSize?: string,
   ): Promise<Result<PaginatedList<RealtyCrmDto>>> {
@@ -131,8 +145,8 @@ export class CrmController {
     if (paginationResult.isFailure()) {
       return paginationResult.mapFailure<PaginatedList<RealtyCrmDto>>()
     }
-
-    const data = await this.crmService.getRealtyPaginated(
+    const data = await this.crmService.searchRealty(
+      params,
       paginationResult.strictValue.page,
       paginationResult.strictValue.pageSize,
     )
