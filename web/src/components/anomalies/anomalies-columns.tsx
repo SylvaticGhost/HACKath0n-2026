@@ -17,14 +17,14 @@ export const anomaliesColumns: ColumnDef<AnomalyDto>[] = [
   {
     accessorKey: 'id',
     header: () => renderTruncatedValue('id', 'w-[4rem] max-w-[4rem]'),
-    cell: ({ row }) => <div className="w-[4rem] max-w-[4rem] font-mono text-xs">{row.original.id}</div>,
+    cell: ({ row }) => <div className="w-16 max-w-16 font-mono text-xs">{row.original.id}</div>,
   },
   {
     accessorKey: 'cadastralNumber',
     header: () => renderTruncatedValue('cadastral_number', 'w-[12rem] max-w-[12rem]'),
     cell: ({ row }) => (
       <div
-        className="w-[12rem] max-w-[12rem] truncate font-mono text-xs text-muted-foreground"
+        className="w-48 max-w-48 truncate font-mono text-xs text-muted-foreground"
         title={row.original.cadastralNumber || ''}
       >
         {row.original.cadastralNumber || '-'}
@@ -52,9 +52,9 @@ export const anomaliesColumns: ColumnDef<AnomalyDto>[] = [
   },
   {
     id: 'actions',
-    header: () => renderTruncatedValue('actions', 'w-[4rem] max-w-[4rem]'),
+    header: () => renderTruncatedValue('actions', 'w-[6rem] max-w-[6rem] text-right'),
     cell: ({ row }) => (
-      <div className="w-[3rem] max-w-[3rem] text-right">
+      <div className="w-24 max-w-24 text-right">
         <AnomaliesRowActions anomaly={row.original} />
       </div>
     ),

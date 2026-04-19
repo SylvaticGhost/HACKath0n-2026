@@ -21,12 +21,20 @@ interface DetailRow {
   value: string
 }
 
-function normalizeValue(value: unknown) {
-  if (value === null || value === undefined || value === '') {
-    return '-'
+function hasValue(value: unknown) {
+  if (value === null || value === undefined) {
+    return false
   }
 
-  return String(value)
+  if (typeof value === 'string') {
+    return value.trim().length > 0
+  }
+
+  return true
+}
+
+function toText(value: unknown) {
+  return hasValue(value) ? String(value) : null
 }
 
 function resolveStatusClass(status: string) {
@@ -57,14 +65,33 @@ export function AnomalyDetailsDialog({ open, anomalyId, onOpenChange }: AnomalyD
 
     const anomaly = detailsQuery.data.anomaly
 
-    return [
-      { label: 'ID', value: normalizeValue(anomaly.id) },
-      { label: 'Cadastral Number', value: normalizeValue(anomaly.cadastralNumber) },
-      { label: 'Land Address', value: normalizeValue(anomaly.landAddress) },
-      { label: 'Matched Realty Address', value: normalizeValue(anomaly.realtyAddress) },
-      { label: 'Match Score', value: formatNumberValue(anomaly.matchScore) },
-      { label: 'Match Reason', value: normalizeValue(anomaly.matchReason) },
-    ]
+    const rows: DetailRow[] = [{ label: 'ID', value: String(anomaly.id) }]
+
+    const cadastralNumber = toText(anomaly.cadastralNumber)
+    if (cadastralNumber) {
+      rows.push({ label: 'Cadastral Number', value: cadastralNumber })
+    }
+
+    const landAddress = toText(anomaly.landAddress)
+    if (landAddress) {
+      rows.push({ label: 'Land Address', value: landAddress })
+    }
+
+    const matchedRealtyAddress = toText(anomaly.realtyAddress)
+    if (matchedRealtyAddress) {
+      rows.push({ label: 'Matched Realty Address', value: matchedRealtyAddress })
+    }
+
+    if (hasValue(anomaly.matchScore)) {
+      rows.push({ label: 'Match Score', value: formatNumberValue(anomaly.matchScore) })
+    }
+
+    const matchReason = toText(anomaly.matchReason)
+    if (matchReason) {
+      rows.push({ label: 'Match Reason', value: matchReason })
+    }
+
+    return rows
   }, [detailsQuery.data])
 
   const landRows = useMemo<DetailRow[]>(() => {
@@ -74,25 +101,59 @@ export function AnomalyDetailsDialog({ open, anomalyId, onOpenChange }: AnomalyD
 
     const land = detailsQuery.data.land
 
-    return [
-      { label: 'Cadastral Number', value: normalizeValue(land.cadastralNumber) },
-      { label: 'State Tax ID', value: normalizeValue(land.stateTaxId) },
-      { label: 'User', value: normalizeValue(land.user) },
-      { label: 'Location', value: normalizeValue(land.location) },
-      { label: 'Square (ha)', value: formatNumberValue(land.square) },
-      { label: 'Estimate Value', value: formatNumberValue(land.estimateValue) },
-      { label: 'Ownership Type', value: normalizeValue(land.ownershipType) },
-      { label: 'Intended Purpose', value: normalizeValue(land.intendedPurpose) },
-      { label: 'Land Purpose Type', value: normalizeValue(land.landPurposeType) },
-      { label: 'Owner Part', value: formatNumberValue(land.ownerPart) },
-      { label: 'State Registration Date', value: formatDateValue(land.stateRegistrationDate) },
-      { label: 'Ownership Registration ID', value: normalizeValue(land.ownershipRegistrationId) },
-      { label: 'Registrator', value: normalizeValue(land.registrator) },
-      { label: 'Type', value: normalizeValue(land.type) },
-      { label: 'Subtype', value: normalizeValue(land.subtype) },
-      { label: 'Contact Email', value: normalizeValue(land.propertyInfo?.email) },
-      { label: 'Contact Phone', value: normalizeValue(land.propertyInfo?.phone) },
-    ]
+    const rows: DetailRow[] = []
+
+    const cadastralNumber = toText(land.cadastralNumber)
+    if (cadastralNumber) rows.push({ label: 'Cadastral Number', value: cadastralNumber })
+
+    const stateTaxId = toText(land.stateTaxId)
+    if (stateTaxId) rows.push({ label: 'State Tax ID', value: stateTaxId })
+
+    const user = toText(land.user)
+    if (user) rows.push({ label: 'User', value: user })
+
+    const location = toText(land.location)
+    if (location) rows.push({ label: 'Location', value: location })
+
+    if (hasValue(land.square)) rows.push({ label: 'Square (ha)', value: formatNumberValue(land.square) })
+    if (hasValue(land.estimateValue)) {
+      rows.push({ label: 'Estimate Value', value: formatNumberValue(land.estimateValue) })
+    }
+
+    const ownershipType = toText(land.ownershipType)
+    if (ownershipType) rows.push({ label: 'Ownership Type', value: ownershipType })
+
+    const intendedPurpose = toText(land.intendedPurpose)
+    if (intendedPurpose) rows.push({ label: 'Intended Purpose', value: intendedPurpose })
+
+    const landPurposeType = toText(land.landPurposeType)
+    if (landPurposeType) rows.push({ label: 'Land Purpose Type', value: landPurposeType })
+
+    if (hasValue(land.ownerPart)) rows.push({ label: 'Owner Part', value: formatNumberValue(land.ownerPart) })
+
+    if (hasValue(land.stateRegistrationDate)) {
+      rows.push({ label: 'State Registration Date', value: formatDateValue(land.stateRegistrationDate) })
+    }
+
+    const ownershipRegistrationId = toText(land.ownershipRegistrationId)
+    if (ownershipRegistrationId) rows.push({ label: 'Ownership Registration ID', value: ownershipRegistrationId })
+
+    const registrator = toText(land.registrator)
+    if (registrator) rows.push({ label: 'Registrator', value: registrator })
+
+    const type = toText(land.type)
+    if (type) rows.push({ label: 'Type', value: type })
+
+    const subtype = toText(land.subtype)
+    if (subtype) rows.push({ label: 'Subtype', value: subtype })
+
+    const contactEmail = toText(land.propertyInfo?.email)
+    if (contactEmail) rows.push({ label: 'Contact Email', value: contactEmail })
+
+    const contactPhone = toText(land.propertyInfo?.phone)
+    if (contactPhone) rows.push({ label: 'Contact Phone', value: contactPhone })
+
+    return rows
   }, [detailsQuery.data])
 
   const errorMessage = detailsQuery.error instanceof Error ? detailsQuery.error.message : 'Unable to load details.'
@@ -135,72 +196,75 @@ export function AnomalyDetailsDialog({ open, anomalyId, onOpenChange }: AnomalyD
                   <DetailsGrid rows={anomalyRows} />
                 </section>
 
-                <Separator />
+                {landRows.length > 0 ? (
+                  <>
+                    <Separator />
+                    <section className="space-y-3">
+                      <h3 className="text-base font-semibold">Land Plot</h3>
+                      <DetailsGrid rows={landRows} />
+                    </section>
+                  </>
+                ) : null}
 
-                <section className="space-y-3">
-                  <h3 className="text-base font-semibold">Land Plot</h3>
-                  {detailsQuery.data.land ? (
-                    <DetailsGrid rows={landRows} />
-                  ) : (
-                    <p className="rounded-md border bg-muted/20 px-3 py-2 text-sm text-muted-foreground">
-                      No linked land record found for this anomaly.
-                    </p>
-                  )}
-                </section>
+                {hasMatchedRealtyAddress && detailsQuery.data.realty.length ? (
+                  <>
+                    <Separator />
+                    <section className="space-y-3">
+                      <h3 className="text-base font-semibold">Related Realty By Matched Address</h3>
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>State Tax ID</TableHead>
+                            <TableHead>Taxpayer</TableHead>
+                            <TableHead>Object Type</TableHead>
+                            <TableHead>Object Address</TableHead>
+                            <TableHead>Registration Date</TableHead>
+                            <TableHead>Termination Date</TableHead>
+                            <TableHead>Total Area</TableHead>
+                            <TableHead>Ownership Share</TableHead>
+                            <TableHead>Contact</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {detailsQuery.data.realty.map((item) => {
+                            const rowKey = `${item.stateTaxId}-${formatDateValue(item.ownershipRegistrationDate)}`
+                            const contact = [toText(item.propertyInfo?.email), toText(item.propertyInfo?.phone)]
+                              .filter((value): value is string => Boolean(value))
+                              .join(' / ')
 
-                <Separator />
-
-                <section className="space-y-3">
-                  <h3 className="text-base font-semibold">Related Realty By Matched Address</h3>
-                  {hasMatchedRealtyAddress && detailsQuery.data.realty.length ? (
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>State Tax ID</TableHead>
-                          <TableHead>Taxpayer</TableHead>
-                          <TableHead>Object Type</TableHead>
-                          <TableHead>Object Address</TableHead>
-                          <TableHead>Registration Date</TableHead>
-                          <TableHead>Termination Date</TableHead>
-                          <TableHead>Total Area</TableHead>
-                          <TableHead>Ownership Share</TableHead>
-                          <TableHead>Contact</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {detailsQuery.data.realty.map((item) => {
-                          const rowKey = `${item.stateTaxId}-${formatDateValue(item.ownershipRegistrationDate)}`
-
-                          return (
-                            <TableRow key={rowKey}>
-                              <TableCell className="font-mono text-xs">{item.stateTaxId}</TableCell>
-                              <TableCell>{normalizeValue(item.taxpayerName)}</TableCell>
-                              <TableCell>{normalizeValue(item.objectType)}</TableCell>
-                              <TableCell className="max-w-[18rem] whitespace-normal">
-                                {normalizeValue(item.objectAddress)}
-                              </TableCell>
-                              <TableCell>{formatDateValue(item.ownershipRegistrationDate)}</TableCell>
-                              <TableCell>{formatDateValue(item.ownershipTerminationDate)}</TableCell>
-                              <TableCell>{formatNumberValue(item.totalArea)}</TableCell>
-                              <TableCell>{formatNumberValue(item.ownershipShare)}</TableCell>
-                              <TableCell>
-                                {normalizeValue(item.propertyInfo?.email)} / {normalizeValue(item.propertyInfo?.phone)}
-                              </TableCell>
-                            </TableRow>
-                          )
-                        })}
-                      </TableBody>
-                    </Table>
-                  ) : hasMatchedRealtyAddress ? (
-                    <p className="rounded-md border bg-muted/20 px-3 py-2 text-sm text-muted-foreground">
-                      No realty records found by matched realty address.
-                    </p>
-                  ) : (
-                    <p className="rounded-md border bg-muted/20 px-3 py-2 text-sm text-muted-foreground">
-                      Matched Realty Address is missing, so related realty lookup is not performed.
-                    </p>
-                  )}
-                </section>
+                            return (
+                              <TableRow key={rowKey}>
+                                <TableCell className="font-mono text-xs">{toText(item.stateTaxId) ?? ''}</TableCell>
+                                <TableCell>{toText(item.taxpayerName) ?? ''}</TableCell>
+                                <TableCell>{toText(item.objectType) ?? ''}</TableCell>
+                                <TableCell className="max-w-[18rem] whitespace-normal">
+                                  {toText(item.objectAddress) ?? ''}
+                                </TableCell>
+                                <TableCell>
+                                  {hasValue(item.ownershipRegistrationDate)
+                                    ? formatDateValue(item.ownershipRegistrationDate)
+                                    : ''}
+                                </TableCell>
+                                <TableCell>
+                                  {hasValue(item.ownershipTerminationDate)
+                                    ? formatDateValue(item.ownershipTerminationDate)
+                                    : ''}
+                                </TableCell>
+                                <TableCell>
+                                  {hasValue(item.totalArea) ? formatNumberValue(item.totalArea) : ''}
+                                </TableCell>
+                                <TableCell>
+                                  {hasValue(item.ownershipShare) ? formatNumberValue(item.ownershipShare) : ''}
+                                </TableCell>
+                                <TableCell>{contact}</TableCell>
+                              </TableRow>
+                            )
+                          })}
+                        </TableBody>
+                      </Table>
+                    </section>
+                  </>
+                ) : null}
               </>
             ) : null}
           </div>
