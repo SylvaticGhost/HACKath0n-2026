@@ -72,6 +72,15 @@ export class CrmService {
       .getMany()
   }
 
+  async findRealtyByLocationExact(objectAddress: string): Promise<RealtyCrmDto[]> {
+    return this.entityManager
+      .createQueryBuilder(RealtyCrm, 'realty')
+      .where('realty.objectAddress = :objectAddress', { objectAddress })
+      .orderBy('realty.stateTaxId', 'ASC')
+      .addOrderBy('realty.ownershipRegistrationDate', 'ASC')
+      .getMany()
+  }
+
   async searchLand(params: LandSearchDto, page: number, pageSize: number): Promise<PaginatedList<LandCrmDto>> {
     const query = this.entityManager.createQueryBuilder(LandCrm, 'land')
 

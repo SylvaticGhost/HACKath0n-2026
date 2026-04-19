@@ -62,7 +62,7 @@ export function AppSidebar() {
   return (
     <Sidebar collapsible="icon" variant="sidebar">
       <SidebarHeader className="h-14 p-2 group-data-[collapsible=icon]:p-1">
-        <div className="h-full overflow-hidden rounded-xl border border-sidebar-border bg-sidebar-accent/30 px-2">
+        <div className="h-full overflow-hidden px-2">
           <div className="flex h-full w-full items-center gap-3 group-data-[collapsible=icon]:justify-center">
             <div className="flex aspect-square size-8 shrink-0 items-center justify-center rounded-md bg-sidebar-primary text-sidebar-primary-foreground shadow-sm group-data-[collapsible=icon]:size-7">
               <Landmark className="size-4" />

@@ -71,6 +71,15 @@ export class RegistryService {
       .getMany()
   }
 
+  async findRealtyByLocationExact(objectAddress: string): Promise<RealtyRegistryDto[]> {
+    return this.entityManager
+      .createQueryBuilder(RealtyRegistry, 'realty')
+      .where('realty.objectAddress = :objectAddress', { objectAddress })
+      .orderBy('realty.stateTaxId', 'ASC')
+      .addOrderBy('realty.ownershipRegistrationDate', 'ASC')
+      .getMany()
+  }
+
   async searchLand(params: LandSearchDto, page: number, pageSize: number): Promise<PaginatedList<LandRegistryDto>> {
     const query = this.entityManager.createQueryBuilder(LandRegistry, 'land')
 

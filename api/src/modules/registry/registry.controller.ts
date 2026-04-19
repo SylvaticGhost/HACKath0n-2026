@@ -8,15 +8,7 @@ import type {
   RealtyRegistryDto,
   RealtySearchDto,
 } from 'shared'
-import {
-  LAND_SORT_FIELDS,
-  LandSearchSchema,
-  LocationSuggestionSchema,
-  REALTY_SORT_FIELDS,
-  RealtySearchSchema,
-  Result,
-  SORT_ORDER_VALUES,
-} from 'shared'
+import { LandSearchSchema, LocationSuggestionSchema, RealtySearchSchema, Result } from 'shared'
 import { ZodValidationPipe } from '../../middleware/zod-validation.pipe'
 import { parsePaginationQuery } from '../../utils/pagination-query'
 import { RegistryService } from './registry.service'
@@ -36,8 +28,6 @@ export class RegistryController {
   @ApiQuery({ name: 'squareMax', required: false, type: Number })
   @ApiQuery({ name: 'estimateValueMin', required: false, type: Number })
   @ApiQuery({ name: 'estimateValueMax', required: false, type: Number })
-  @ApiQuery({ name: 'sortBy', required: false, enum: LAND_SORT_FIELDS })
-  @ApiQuery({ name: 'sortOrder', required: false, enum: SORT_ORDER_VALUES })
   async getLandPaginated(
     @Query(new ZodValidationPipe(LandSearchSchema)) params: LandSearchDto,
     @Query('page') page?: string,
@@ -97,8 +87,6 @@ export class RegistryController {
   @ApiQuery({ name: 'totalAreaMax', required: false, type: Number })
   @ApiQuery({ name: 'ownershipShareMin', required: false, type: Number })
   @ApiQuery({ name: 'ownershipShareMax', required: false, type: Number })
-  @ApiQuery({ name: 'sortBy', required: false, enum: REALTY_SORT_FIELDS })
-  @ApiQuery({ name: 'sortOrder', required: false, enum: SORT_ORDER_VALUES })
   async getRealtyPaginated(
     @Query(new ZodValidationPipe(RealtySearchSchema)) params: RealtySearchDto,
     @Query('page') page?: string,
