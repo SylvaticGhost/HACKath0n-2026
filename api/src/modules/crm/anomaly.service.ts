@@ -22,14 +22,14 @@ export class AnomalyService {
         // 2. Perform raw SQL query to insert anomalies
         await transactionalEntityManager.query(`
           INSERT INTO crm.anomalies (cadastral_number, land_address, realty_address, match_score, match_reason)
-          SELECT 
-            cadastral_number, 
-            land_address, 
-            realty_address, 
-            match_score, 
+          SELECT
+            cadastral_number,
+            land_address,
+            realty_address,
+            match_score,
             match_reason
           FROM crm.v_land_realty_mapping
-          WHERE match_reason LIKE '🔴 ЧЕРВОНА%';
+          WHERE match_reason LIKE '🔴%';
         `)
       })
 
