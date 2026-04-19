@@ -13,8 +13,6 @@ function RouteComponent() {
       <SidebarInset className="overflow-hidden">
         <header className="flex h-14 shrink-0 items-center gap-2 border-b bg-background/95 px-4 backdrop-blur md:px-6">
           <SidebarTrigger className="-ml-1" />
-          <div className="h-4 w-px bg-border" aria-hidden />
-          <p className="text-sm font-medium text-muted-foreground">Registry navigation</p>
         </header>
 
         <main className="mx-auto flex min-h-0 w-full max-w-7xl flex-1 flex-col px-4 py-6 md:px-8">
