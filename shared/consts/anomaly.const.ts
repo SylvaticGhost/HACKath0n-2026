@@ -1,0 +1,1 @@
+export const ANOMALY_TYPES = ['UNRESOLVED', 'RESOLVED']
