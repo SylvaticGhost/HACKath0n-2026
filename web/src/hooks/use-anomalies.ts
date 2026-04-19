@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import type { PaginatedList, AnomalyDto } from 'shared'
+import type { AnomalyDetailsDto, AnomalyDto, PaginatedList } from 'shared'
 import { fetchApi } from '../shared/api/client'
 
 export function useAnomaliesList(page = 1, pageSize = 10, hideResolved = false) {
@@ -23,6 +23,14 @@ export function useGenerateAnomalyReport() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['anomalies'] })
     },
+  })
+}
+
+export function useAnomalyDetails(anomalyId: number | null, options?: { enabled?: boolean }) {
+  return useQuery({
+    queryKey: ['anomalies', 'details', anomalyId],
+    queryFn: () => fetchApi<AnomalyDetailsDto>(`/crm/anomaly/${anomalyId}/details`),
+    enabled: Boolean(anomalyId) && (options?.enabled ?? true),
   })
 }
 

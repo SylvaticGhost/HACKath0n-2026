@@ -1,5 +1,5 @@
 import { Controller, Get, Param, Post, Put, Query } from '@nestjs/common'
-import { AnomalyDto, PaginatedList, Result } from 'shared'
+import { AnomalyDetailsDto, AnomalyDto, PaginatedList, Result } from 'shared'
 import { parsePaginationQuery } from '../../utils/pagination-query'
 import { AnomalyService } from './anomaly.service'
 
@@ -29,6 +29,16 @@ export class AnomalyController {
   @Post('generate')
   async generateAnomalyReport(): Promise<Result<void>> {
     return this.anomalyService.createAnomalyReport()
+  }
+
+  @Get(':id/details')
+  async getAnomalyDetails(@Param('id') id: string): Promise<Result<AnomalyDetailsDto>> {
+    const anomalyId = Number(id)
+    if (Number.isNaN(anomalyId)) {
+      return Result.badRequest<AnomalyDetailsDto>('Invalid anomaly id')
+    }
+
+    return this.anomalyService.getAnomalyDetails(anomalyId)
   }
 
   @Put(':id/resolve')

@@ -1,8 +1,10 @@
 import { Injectable } from '@nestjs/common'
 import { InjectEntityManager, InjectRepository } from '@nestjs/typeorm'
 import { EntityManager, Repository } from 'typeorm'
-import { Result, PaginatedList, AnomalyDto } from 'shared'
+import { AnomalyDetailsDto, AnomalyDto, LandCrmDto, PaginatedList, RealtyCrmDto, Result } from 'shared'
 import { Anomaly } from './entities/annomaly.entity'
+import { LandCrm } from './entities/land.crm.entity'
+import { RealtyCrm } from './entities/realty.crm.entity'
 
 @Injectable()
 export class AnomalyService {
@@ -11,6 +13,10 @@ export class AnomalyService {
     private readonly entityManager: EntityManager,
     @InjectRepository(Anomaly)
     private readonly anomalyRepository: Repository<Anomaly>,
+    @InjectRepository(LandCrm)
+    private readonly landCrmRepository: Repository<LandCrm>,
+    @InjectRepository(RealtyCrm)
+    private readonly realtyCrmRepository: Repository<RealtyCrm>,
   ) {}
 
   async createAnomalyReport(): Promise<Result<void>> {
@@ -79,5 +85,39 @@ export class AnomalyService {
     await this.anomalyRepository.save(anomaly)
 
     return Result.success<void>(undefined)
+  }
+
+  async getAnomalyDetails(id: number): Promise<Result<AnomalyDetailsDto>> {
+    const anomaly = await this.anomalyRepository.findOne({ where: { id } })
+
+    if (!anomaly) {
+      return Result.notFound<AnomalyDetailsDto>(`Anomaly with id ${id} not found`)
+    }
+
+    const land = anomaly.cadastralNumber
+      ? await this.landCrmRepository.findOne({
+          where: { cadastralNumber: anomaly.cadastralNumber },
+        })
+      : null
+
+    let realty: RealtyCrm[] = []
+
+    const matchedRealtyAddress = anomaly.realtyAddress?.trim()
+
+    if (matchedRealtyAddress) {
+      realty = await this.realtyCrmRepository.find({
+        where: { objectAddress: matchedRealtyAddress },
+        order: {
+          stateTaxId: 'ASC',
+          ownershipRegistrationDate: 'ASC',
+        },
+      })
+    }
+
+    return Result.success<AnomalyDetailsDto>({
+      anomaly: anomaly as AnomalyDto,
+      land: (land as LandCrmDto | null) ?? null,
+      realty: realty as RealtyCrmDto[],
+    })
   }
 }

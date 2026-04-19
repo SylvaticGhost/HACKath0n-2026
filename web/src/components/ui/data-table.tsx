@@ -9,6 +9,7 @@ interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
   data: TData[]
   showPaginationControls?: boolean
+  onRowClick?: (rowData: TData) => void
   toolbar?: ReactNode
   sorting?: SortingState
   onSortingChange?: OnChangeFn<SortingState>
@@ -20,6 +21,7 @@ export function DataTable<TData, TValue>({
   columns,
   data,
   showPaginationControls = true,
+  onRowClick,
   toolbar,
   sorting,
   onSortingChange,
@@ -42,6 +44,7 @@ export function DataTable<TData, TValue>({
   })
 
   const rows = showPaginationControls ? table.getRowModel().rows : table.getCoreRowModel().rows
+  const isRowClickable = typeof onRowClick === 'function'
 
   return (
     <div className="space-y-4">
@@ -67,7 +70,12 @@ export function DataTable<TData, TValue>({
           <TableBody>
             {rows.length ? (
               rows.map((row) => (
-                <TableRow key={row.id} data-state={row.getIsSelected() && 'selected'}>
+                <TableRow
+                  key={row.id}
+                  data-state={row.getIsSelected() && 'selected'}
+                  className={isRowClickable ? 'cursor-pointer' : undefined}
+                  onClick={() => onRowClick?.(row.original)}
+                >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id} className="px-4 py-3 text-sm text-foreground">
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
