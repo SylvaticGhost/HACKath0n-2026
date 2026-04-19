@@ -63,16 +63,17 @@ export function AppSidebar() {
     <Sidebar collapsible="icon" variant="sidebar">
       <SidebarHeader className="h-14 p-2 group-data-[collapsible=icon]:p-1">
         <div className="h-full overflow-hidden px-2">
-          <div className="flex h-full w-full items-center gap-3 group-data-[collapsible=icon]:justify-center">
-            <div className="flex aspect-square size-8 shrink-0 items-center justify-center rounded-md bg-sidebar-primary text-sidebar-primary-foreground shadow-sm group-data-[collapsible=icon]:size-7">
-              <Landmark className="size-4" />
-            </div>
-            <div className="min-w-0 group-data-[collapsible=icon]:hidden">
-              <p className="truncate text-sm font-semibold uppercase tracking-[0.18em] text-sidebar-foreground">OTG</p>
-              <p className="truncate text-[11px] font-medium uppercase tracking-[0.28em] text-sidebar-foreground/70">
-                Registry
-              </p>
-            </div>
+          <div className="flex h-full w-full items-center group-data-[collapsible=icon]:justify-center">
+            <img
+              src="/logo.png"
+              alt="Sugar Plant SPT"
+              className="h-20 w-full object-contain group-data-[collapsible=icon]:hidden"
+            />
+            <img
+              src="/logo.png"
+              alt="Sugar Plant SPT"
+              className="hidden size-7 object-contain group-data-[collapsible=icon]:block"
+            />
           </div>
         </div>
       </SidebarHeader>
