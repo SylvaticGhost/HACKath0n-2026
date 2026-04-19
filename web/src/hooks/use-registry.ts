@@ -1,9 +1,19 @@
-import { keepPreviousData, useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useMutation, useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query'
 import { fetchApi } from '../shared/api/client'
-import type { LandRegistryDto, PaginatedList, RealtyRegistryDto } from 'shared'
+import type {
+  LandCrmDto,
+  LandRegistryDto,
+  PaginatedList,
+  RealtyCrmDto,
+  RealtyRegistryDto,
+  UpdateLandCrmDto,
+  UpdateRealtyCrmDto,
+} from 'shared'
 
 export type RegistryScope = 'Global Registry' | 'Local Registry'
 export type RegistryEntity = 'Land' | 'Realty'
+
+const LOCAL_REGISTRY_QUERY_KEY = ['registry', 'Local Registry'] as const
 
 interface UseRegistryListOptions {
   scope: RegistryScope
@@ -13,6 +23,10 @@ interface UseRegistryListOptions {
 
 function resolveApiBase(scope: RegistryScope) {
   return scope === 'Global Registry' ? '/registry' : '/crm'
+}
+
+function buildRealtyRecordPath(stateTaxId: string, ownershipRegistrationDate: string) {
+  return `/crm/realty/${encodeURIComponent(stateTaxId)}/${encodeURIComponent(ownershipRegistrationDate)}`
 }
 
 function buildPath(basePath: string, page: number, pageSize: number, searchParam: string, location?: string) {
@@ -94,5 +108,148 @@ export function useRegistryInvalidCount(scope: RegistryScope, entity: RegistryEn
     queryKey: ['registry', scope, entity, 'invalid-count'],
     queryFn: () => fetchApi<number>(`${apiBase}/${entityPath}/invalid-count`),
     staleTime: 30_000,
+  })
+}
+
+interface UseRegistryRecordOptions {
+  enabled?: boolean
+}
+
+export function useLandCrmRecord(cadastralNumber: string | null, options?: UseRegistryRecordOptions) {
+  return useQuery({
+    queryKey: ['crm', 'land', cadastralNumber],
+    queryFn: () => fetchApi<LandCrmDto>(`/crm/land/${encodeURIComponent(cadastralNumber ?? '')}`),
+    enabled: Boolean(cadastralNumber) && (options?.enabled ?? true),
+  })
+}
+
+interface RealtyRecordKey {
+  stateTaxId: string
+  ownershipRegistrationDate: string
+}
+
+export function useRealtyCrmRecord(recordKey: RealtyRecordKey | null, options?: UseRegistryRecordOptions) {
+  return useQuery({
+    queryKey: ['crm', 'realty', recordKey?.stateTaxId, recordKey?.ownershipRegistrationDate],
+    queryFn: () =>
+      fetchApi<RealtyCrmDto>(
+        buildRealtyRecordPath(recordKey?.stateTaxId ?? '', recordKey?.ownershipRegistrationDate ?? ''),
+      ),
+    enabled: Boolean(recordKey?.stateTaxId && recordKey?.ownershipRegistrationDate) && (options?.enabled ?? true),
+  })
+}
+
+async function invalidateLocalRegistryQueries(queryClient: QueryClient) {
+  await queryClient.invalidateQueries({ queryKey: LOCAL_REGISTRY_QUERY_KEY })
+}
+
+export function useCreateLandCrmRecord() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (dto: LandCrmDto) =>
+      fetchApi<LandCrmDto>('/crm/land', {
+        method: 'POST',
+        body: JSON.stringify(dto),
+      }),
+    onSuccess: async () => {
+      await invalidateLocalRegistryQueries(queryClient)
+    },
+  })
+}
+
+interface UpdateLandCrmRecordParams {
+  cadastralNumber: string
+  dto: UpdateLandCrmDto
+}
+
+export function useUpdateLandCrmRecord() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ cadastralNumber, dto }: UpdateLandCrmRecordParams) =>
+      fetchApi<LandCrmDto>(`/crm/land/${encodeURIComponent(cadastralNumber)}`, {
+        method: 'PUT',
+        body: JSON.stringify(dto),
+      }),
+    onSuccess: async () => {
+      await invalidateLocalRegistryQueries(queryClient)
+    },
+  })
+}
+
+export function useDeleteLandCrmRecord() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (cadastralNumber: string) =>
+      fetchApi<null>(`/crm/land/${encodeURIComponent(cadastralNumber)}`, {
+        method: 'DELETE',
+      }),
+    onSuccess: async () => {
+      await invalidateLocalRegistryQueries(queryClient)
+    },
+  })
+}
+
+export function useCreateRealtyCrmRecord() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (dto: RealtyCrmDto) =>
+      fetchApi<RealtyCrmDto>('/crm/realty', {
+        method: 'POST',
+        body: JSON.stringify(dto),
+      }),
+    onSuccess: async () => {
+      await invalidateLocalRegistryQueries(queryClient)
+    },
+  })
+}
+
+interface UpdateRealtyCrmRecordParams extends RealtyRecordKey {
+  dto: UpdateRealtyCrmDto
+}
+
+export function useUpdateRealtyCrmRecord() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ stateTaxId, ownershipRegistrationDate, dto }: UpdateRealtyCrmRecordParams) =>
+      fetchApi<RealtyCrmDto>(buildRealtyRecordPath(stateTaxId, ownershipRegistrationDate), {
+        method: 'PUT',
+        body: JSON.stringify(dto),
+      }),
+    onSuccess: async () => {
+      await invalidateLocalRegistryQueries(queryClient)
+    },
+  })
+}
+
+export function useDeleteRealtyCrmRecord() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ stateTaxId, ownershipRegistrationDate }: RealtyRecordKey) =>
+      fetchApi<null>(buildRealtyRecordPath(stateTaxId, ownershipRegistrationDate), {
+        method: 'DELETE',
+      }),
+    onSuccess: async () => {
+      await invalidateLocalRegistryQueries(queryClient)
+    },
+  })
+}
+
+export function useClearCrmData() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: () =>
+      fetchApi<null>('/crm/data', {
+        method: 'DELETE',
+      }),
+    onSuccess: async () => {
+      await invalidateLocalRegistryQueries(queryClient)
+    },
   })
 }

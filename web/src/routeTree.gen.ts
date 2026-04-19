@@ -19,6 +19,8 @@ import { Route as AppLocalRegistryRealtyRouteImport } from './routes/_app/local-
 import { Route as AppLocalRegistryLandRouteImport } from './routes/_app/local-registry/land'
 import { Route as AppGlobalRegistryRealtyRouteImport } from './routes/_app/global-registry/realty'
 import { Route as AppGlobalRegistryLandRouteImport } from './routes/_app/global-registry/land'
+import { Route as AppDiffRealtyRouteImport } from './routes/_app/diff/realty'
+import { Route as AppDiffLandRouteImport } from './routes/_app/diff/land'
 
 const AppRouteRoute = AppRouteRouteImport.update({
   id: '/_app',
@@ -69,6 +71,16 @@ const AppGlobalRegistryLandRoute = AppGlobalRegistryLandRouteImport.update({
   path: '/global-registry/land',
   getParentRoute: () => AppRouteRoute,
 } as any)
+const AppDiffRealtyRoute = AppDiffRealtyRouteImport.update({
+  id: '/diff/realty',
+  path: '/diff/realty',
+  getParentRoute: () => AppRouteRoute,
+} as any)
+const AppDiffLandRoute = AppDiffLandRouteImport.update({
+  id: '/diff/land',
+  path: '/diff/land',
+  getParentRoute: () => AppRouteRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
@@ -76,6 +88,8 @@ export interface FileRoutesByFullPath {
   '/requests': typeof AppRequestsRoute
   '/table': typeof AppTableRoute
   '/upload_file': typeof AppUpload_fileRoute
+  '/diff/land': typeof AppDiffLandRoute
+  '/diff/realty': typeof AppDiffRealtyRoute
   '/global-registry/land': typeof AppGlobalRegistryLandRoute
   '/global-registry/realty': typeof AppGlobalRegistryRealtyRoute
   '/local-registry/land': typeof AppLocalRegistryLandRoute
@@ -87,6 +101,8 @@ export interface FileRoutesByTo {
   '/table': typeof AppTableRoute
   '/upload_file': typeof AppUpload_fileRoute
   '/': typeof AppIndexRoute
+  '/diff/land': typeof AppDiffLandRoute
+  '/diff/realty': typeof AppDiffRealtyRoute
   '/global-registry/land': typeof AppGlobalRegistryLandRoute
   '/global-registry/realty': typeof AppGlobalRegistryRealtyRoute
   '/local-registry/land': typeof AppLocalRegistryLandRoute
@@ -100,6 +116,8 @@ export interface FileRoutesById {
   '/_app/table': typeof AppTableRoute
   '/_app/upload_file': typeof AppUpload_fileRoute
   '/_app/': typeof AppIndexRoute
+  '/_app/diff/land': typeof AppDiffLandRoute
+  '/_app/diff/realty': typeof AppDiffRealtyRoute
   '/_app/global-registry/land': typeof AppGlobalRegistryLandRoute
   '/_app/global-registry/realty': typeof AppGlobalRegistryRealtyRoute
   '/_app/local-registry/land': typeof AppLocalRegistryLandRoute
@@ -113,6 +131,8 @@ export interface FileRouteTypes {
     | '/requests'
     | '/table'
     | '/upload_file'
+    | '/diff/land'
+    | '/diff/realty'
     | '/global-registry/land'
     | '/global-registry/realty'
     | '/local-registry/land'
@@ -124,6 +144,8 @@ export interface FileRouteTypes {
     | '/table'
     | '/upload_file'
     | '/'
+    | '/diff/land'
+    | '/diff/realty'
     | '/global-registry/land'
     | '/global-registry/realty'
     | '/local-registry/land'
@@ -136,6 +158,8 @@ export interface FileRouteTypes {
     | '/_app/table'
     | '/_app/upload_file'
     | '/_app/'
+    | '/_app/diff/land'
+    | '/_app/diff/realty'
     | '/_app/global-registry/land'
     | '/_app/global-registry/realty'
     | '/_app/local-registry/land'
@@ -218,6 +242,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppGlobalRegistryLandRouteImport
       parentRoute: typeof AppRouteRoute
     }
+    '/_app/diff/realty': {
+      id: '/_app/diff/realty'
+      path: '/diff/realty'
+      fullPath: '/diff/realty'
+      preLoaderRoute: typeof AppDiffRealtyRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
+    '/_app/diff/land': {
+      id: '/_app/diff/land'
+      path: '/diff/land'
+      fullPath: '/diff/land'
+      preLoaderRoute: typeof AppDiffLandRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
   }
 }
 
@@ -227,6 +265,8 @@ interface AppRouteRouteChildren {
   AppTableRoute: typeof AppTableRoute
   AppUpload_fileRoute: typeof AppUpload_fileRoute
   AppIndexRoute: typeof AppIndexRoute
+  AppDiffLandRoute: typeof AppDiffLandRoute
+  AppDiffRealtyRoute: typeof AppDiffRealtyRoute
   AppGlobalRegistryLandRoute: typeof AppGlobalRegistryLandRoute
   AppGlobalRegistryRealtyRoute: typeof AppGlobalRegistryRealtyRoute
   AppLocalRegistryLandRoute: typeof AppLocalRegistryLandRoute
@@ -239,6 +279,8 @@ const AppRouteRouteChildren: AppRouteRouteChildren = {
   AppTableRoute: AppTableRoute,
   AppUpload_fileRoute: AppUpload_fileRoute,
   AppIndexRoute: AppIndexRoute,
+  AppDiffLandRoute: AppDiffLandRoute,
+  AppDiffRealtyRoute: AppDiffRealtyRoute,
   AppGlobalRegistryLandRoute: AppGlobalRegistryLandRoute,
   AppGlobalRegistryRealtyRoute: AppGlobalRegistryRealtyRoute,
   AppLocalRegistryLandRoute: AppLocalRegistryLandRoute,

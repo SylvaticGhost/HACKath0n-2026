@@ -2,18 +2,22 @@ import { Injectable } from '@nestjs/common'
 import { InjectEntityManager } from '@nestjs/typeorm'
 import type {
   LandCrmDto,
+  LandSearchDto,
+  LandTaxViewDto,
   PaginatedList,
   RealtyCrmDto,
+  RealtySearchDto,
+  RealtyTaxViewDto,
   UpdateLandCrmDto,
   UpdateRealtyCrmDto,
-  LandSearchDto,
-  RealtySearchDto,
 } from 'shared'
 import { EntityManager } from 'typeorm'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 import { RealtyCrm } from './entities/realty.crm.entity'
 import { LandCrm } from './entities/land.crm.entity'
+import { LandTaxView } from './entities/land-tax.view'
+import { RealtyTaxView } from './entities/realty-tax.view'
 import { Result } from 'shared'
 
 @Injectable()
@@ -69,9 +73,7 @@ export class CrmService {
     const query = this.entityManager.createQueryBuilder(LandCrm, 'land')
 
     if (params.cadastralNumber) {
-      query.andWhere('land.cadastralNumber ILIKE :cadastralNumber', {
-        cadastralNumber: `%${params.cadastralNumber}%`,
-      })
+      query.andWhere('land.cadastralNumber ILIKE :cadastralNumber', { cadastralNumber: `%${params.cadastralNumber}%` })
     }
     if (params.stateTaxId) {
       query.andWhere('land.stateTaxId ILIKE :stateTaxId', { stateTaxId: `%${params.stateTaxId}%` })
@@ -82,6 +84,21 @@ export class CrmService {
     if (params.location) {
       query.andWhere('land.location ILIKE :location', { location: `%${params.location}%` })
     }
+    if (params.squareMin !== undefined) {
+      query.andWhere('land.square >= :squareMin', { squareMin: params.squareMin })
+    }
+    if (params.squareMax !== undefined) {
+      query.andWhere('land.square <= :squareMax', { squareMax: params.squareMax })
+    }
+    if (params.estimateValueMin !== undefined) {
+      query.andWhere('land.estimateValue >= :estimateValueMin', { estimateValueMin: params.estimateValueMin })
+    }
+    if (params.estimateValueMax !== undefined) {
+      query.andWhere('land.estimateValue <= :estimateValueMax', { estimateValueMax: params.estimateValueMax })
+    }
+    if (params.validationStatus) {
+      query.andWhere('land.validationStatus = :validationStatus', { validationStatus: params.validationStatus })
+    }
 
     const [items, totalItems] = await query
       .orderBy('land.cadastralNumber', 'ASC')
@@ -89,12 +106,7 @@ export class CrmService {
       .take(pageSize)
       .getManyAndCount()
 
-    return {
-      items,
-      totalItems,
-      page,
-      pageSize,
-    }
+    return { items, totalItems, page, pageSize }
   }
 
   async getLandById(cadastralNumber: string): Promise<Result<LandCrmDto>> {
@@ -164,14 +176,25 @@ export class CrmService {
       query.andWhere('realty.stateTaxId ILIKE :stateTaxId', { stateTaxId: `%${params.stateTaxId}%` })
     }
     if (params.taxpayerName) {
-      query.andWhere('realty.taxpayerName ILIKE :taxpayerName', {
-        taxpayerName: `%${params.taxpayerName}%`,
-      })
+      query.andWhere('realty.taxpayerName ILIKE :taxpayerName', { taxpayerName: `%${params.taxpayerName}%` })
     }
     if (params.objectAddress) {
-      query.andWhere('realty.objectAddress ILIKE :objectAddress', {
-        objectAddress: `%${params.objectAddress}%`,
-      })
+      query.andWhere('realty.objectAddress ILIKE :objectAddress', { objectAddress: `%${params.objectAddress}%` })
+    }
+    if (params.totalAreaMin !== undefined) {
+      query.andWhere('realty.totalArea >= :totalAreaMin', { totalAreaMin: params.totalAreaMin })
+    }
+    if (params.totalAreaMax !== undefined) {
+      query.andWhere('realty.totalArea <= :totalAreaMax', { totalAreaMax: params.totalAreaMax })
+    }
+    if (params.ownershipShareMin !== undefined) {
+      query.andWhere('realty.ownershipShare >= :ownershipShareMin', { ownershipShareMin: params.ownershipShareMin })
+    }
+    if (params.ownershipShareMax !== undefined) {
+      query.andWhere('realty.ownershipShare <= :ownershipShareMax', { ownershipShareMax: params.ownershipShareMax })
+    }
+    if (params.validationStatus) {
+      query.andWhere('realty.validationStatus = :validationStatus', { validationStatus: params.validationStatus })
     }
 
     const [items, totalItems] = await query
@@ -181,12 +204,7 @@ export class CrmService {
       .take(pageSize)
       .getManyAndCount()
 
-    return {
-      items,
-      totalItems,
-      page,
-      pageSize,
-    }
+    return { items, totalItems, page, pageSize }
   }
 
   async getRealtyById(stateTaxId: string, ownershipRegistrationDate: Date): Promise<Result<RealtyCrmDto>> {
@@ -249,6 +267,27 @@ export class CrmService {
     }
     await this.realtyCrmRepository.delete({ stateTaxId, ownershipRegistrationDate })
     return Result.success<null>(null)
+  }
+
+  async getLandTax(page: number, pageSize: number): Promise<PaginatedList<LandTaxViewDto>> {
+    const [items, totalItems] = await this.entityManager
+      .createQueryBuilder(LandTaxView, 'tax')
+      .orderBy('tax.cadastralNumber', 'ASC')
+      .skip((page - 1) * pageSize)
+      .take(pageSize)
+      .getManyAndCount()
+    return { items, totalItems, page, pageSize }
+  }
+
+  async getRealtyTax(page: number, pageSize: number): Promise<PaginatedList<RealtyTaxViewDto>> {
+    const [items, totalItems] = await this.entityManager
+      .createQueryBuilder(RealtyTaxView, 'tax')
+      .orderBy('tax.stateTaxId', 'ASC')
+      .addOrderBy('tax.ownershipRegistrationDate', 'ASC')
+      .skip((page - 1) * pageSize)
+      .take(pageSize)
+      .getManyAndCount()
+    return { items, totalItems, page, pageSize }
   }
 
   async clearData(): Promise<Result<null>> {

@@ -26,8 +26,8 @@ export function DataTable<TData, TValue>({
 
   return (
     <div className="space-y-4">
-      <div className="overflow-hidden rounded-xl border bg-card">
-        <Table className="min-w-full w-max">
+      <div className="overflow-hidden">
+        <Table className="min-w-full w-max [&_tr]:border-0">
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
@@ -35,7 +35,7 @@ export function DataTable<TData, TValue>({
                   return (
                     <TableHead
                       key={header.id}
-                      className="h-10 bg-muted/35 px-3 text-[11px] font-semibold tracking-wide uppercase"
+                      className="h-10 bg-transparent px-4 text-xs font-semibold tracking-wide uppercase text-muted-foreground"
                     >
                       {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
                     </TableHead>
@@ -49,7 +49,7 @@ export function DataTable<TData, TValue>({
               rows.map((row) => (
                 <TableRow key={row.id} data-state={row.getIsSelected() && 'selected'}>
                   {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id} className="px-3 py-2.5 text-sm">
+                    <TableCell key={cell.id} className="px-4 py-3 text-sm text-foreground">
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
                     </TableCell>
                   ))}
@@ -66,16 +66,23 @@ export function DataTable<TData, TValue>({
         </Table>
       </div>
       {showPaginationControls && (
-        <div className="flex items-center justify-end space-x-2">
+        <div className="flex items-center justify-end space-x-1 pt-2">
           <Button
-            variant="outline"
+            variant="ghost"
             size="sm"
+            className="text-xs"
             onClick={() => table.previousPage()}
             disabled={!table.getCanPreviousPage()}
           >
-            Previous
+            Prev
           </Button>
-          <Button variant="outline" size="sm" onClick={() => table.nextPage()} disabled={!table.getCanNextPage()}>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-xs"
+            onClick={() => table.nextPage()}
+            disabled={!table.getCanNextPage()}
+          >
             Next
           </Button>
         </div>

@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
-import { Repository, Not } from 'typeorm'
+import { Repository, In } from 'typeorm'
 import { LandDiffView } from './entities/land-diff.view'
 import { RealtyDiffView } from './entities/realty-diff.view'
 import { PaginatedList } from 'shared'
@@ -18,7 +18,7 @@ export class DiffService {
   async getLandDiffs(pagination: PaginationQuery): Promise<PaginatedList<LandDiffView>> {
     const [items, totalItems] = await this.landDiffRepository.findAndCount({
       where: {
-        diffStatus: Not('MATCH'),
+        diffStatus: In(['CONFLICT', 'MISSING_IN_REGISTRY']),
       },
       skip: (pagination.page - 1) * pagination.pageSize,
       take: pagination.pageSize,
@@ -35,7 +35,7 @@ export class DiffService {
   async getRealtyDiffs(pagination: PaginationQuery): Promise<PaginatedList<RealtyDiffView>> {
     const [items, totalItems] = await this.realtyDiffRepository.findAndCount({
       where: {
-        diffStatus: Not('MATCH'),
+        diffStatus: In(['CONFLICT', 'MISSING_IN_REGISTRY']),
       },
       skip: (pagination.page - 1) * pagination.pageSize,
       take: pagination.pageSize,

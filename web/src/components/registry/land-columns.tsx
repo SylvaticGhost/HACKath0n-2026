@@ -1,8 +1,16 @@
 import type { ColumnDef } from '@tanstack/react-table'
 import type { LandRegistryDto } from '../../../../shared/contracts/land.registry.dto'
 import { createRegistryColumn, formatDateValue, formatNumberValue } from './registry-column-helpers'
+import { ValidationStatusIndicator } from './validation-status-indicator'
 
 export const landColumns: ColumnDef<LandRegistryDto>[] = [
+  {
+    id: 'validation-status',
+    header: () => <div className="w-5" aria-hidden="true" />,
+    cell: ({ row }) => <ValidationStatusIndicator value={row.original} />,
+    enableSorting: false,
+    size: 28,
+  },
   createRegistryColumn<LandRegistryDto>('cadastralNumber', 'cadastral_number', {
     widthClassName: 'w-[12rem] max-w-[12rem]',
   }),

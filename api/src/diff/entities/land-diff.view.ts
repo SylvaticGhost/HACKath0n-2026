@@ -42,6 +42,12 @@ export class LandDiffView {
   @ViewColumn({ name: 'crm_location' })
   crmLocation: string | null
 
+  @ViewColumn({ name: 'registry_state_registration_date' })
+  registryStateRegistrationDate: Date | null
+
+  @ViewColumn({ name: 'crm_state_registration_date' })
+  crmStateRegistrationDate: Date | null
+
   @ViewColumn({ name: 'similarity_score' })
   similarityScore: number | null
 }
