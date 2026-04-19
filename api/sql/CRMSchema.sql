@@ -76,18 +76,15 @@ CREATE OR REPLACE FUNCTION crm.calculate_realty_similarity(
 RETURNS NUMERIC AS $$
 DECLARE
     penalty NUMERIC := 0;
-    max_score NUMERIC := 40; -- Загальна база балів (4 параметри по 10 балів)
+    max_score NUMERIC := 50; -- Загальна база балів (5 параметрів по 10 балів)
     area_diff_ratio NUMERIC;
     similarity_percent NUMERIC;
 BEGIN
     -- 1. Розрахунок штрафу по площі (пропорційно, але не більше 10 балів)
     IF crm_row.total_area IS DISTINCT FROM reg_row.total_area THEN
-        -- Якщо хоча б одне значення NULL, або обидва нулі — максимальний штраф 10
         IF crm_row.total_area IS NULL OR reg_row.total_area IS NULL OR GREATEST(crm_row.total_area, reg_row.total_area) = 0 THEN
             penalty := penalty + 10;
         ELSE
-            -- Пропорція: (Різниця / Найбільше значення) * 10
-            -- Наприклад, площа 100 і 90: різниця 10. (10 / 100) * 10 = 1 бал штрафу.
             area_diff_ratio := ABS(crm_row.total_area - reg_row.total_area) / GREATEST(crm_row.total_area, reg_row.total_area);
             penalty := penalty + LEAST(10, area_diff_ratio * 10);
         END IF;
@@ -108,6 +105,11 @@ BEGIN
         penalty := penalty + 10;
     END IF;
 
+    -- 5. Штраф за дату припинення права власності (10 балів)
+    IF crm_row.ownership_termination_date IS DISTINCT FROM reg_row.ownership_termination_date THEN
+        penalty := penalty + 10;
+    END IF;
+
     -- Розраховуємо відсоток схожості (100% - ідеальний збіг, 0% - нічого не збігається)
     similarity_percent := ROUND(((max_score - penalty) / max_score) * 100, 2);
 
@@ -122,7 +124,7 @@ CREATE OR REPLACE FUNCTION crm.calculate_land_similarity(
 RETURNS NUMERIC AS $$
 DECLARE
     penalty NUMERIC := 0;
-    max_score NUMERIC := 60; -- База: 6 параметрів по 10 балів
+    max_score NUMERIC := 70; -- База: 7 параметрів по 10 балів
     diff_ratio NUMERIC;
     similarity_percent NUMERIC;
 BEGIN
@@ -163,6 +165,11 @@ BEGIN
 
     -- 6. Штраф за тип власності (10 балів)
     IF crm_row.ownership_type IS DISTINCT FROM reg_row.ownership_type THEN
+        penalty := penalty + 10;
+    END IF;
+
+    -- 7. Штраф за дату державної реєстрації (10 балів)
+    IF crm_row.state_registration_date IS DISTINCT FROM reg_row.state_registration_date THEN
         penalty := penalty + 10;
     END IF;
 

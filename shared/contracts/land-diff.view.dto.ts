@@ -13,6 +13,8 @@ export const LandDiffViewDtoSchema = z.object({
   crmSquare: z.number().nullable(),
   crmEstimateValue: z.number().nullable(),
   crmLocation: z.string().nullable(),
+  registryStateRegistrationDate: z.coerce.date().nullable(),
+  crmStateRegistrationDate: z.coerce.date().nullable(),
   similarityScore: z.number().nullable(),
 })
 
