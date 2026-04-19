@@ -12,6 +12,7 @@ import {
   AlertTriangle,
   Moon,
   Sun,
+  Layers2,
 } from 'lucide-react'
 
 import { ModeToggle } from '@/components/mode-toggle'
@@ -64,17 +65,11 @@ export function AppSidebar() {
     <Sidebar collapsible="icon" variant="sidebar">
       <SidebarHeader className="h-14 p-2 group-data-[collapsible=icon]:p-1">
         <div className="h-full overflow-hidden px-2">
-          <div className="flex h-full w-full items-center group-data-[collapsible=icon]:justify-center">
-            <img
-              src="/logo.png"
-              alt="Sugar Plant SPT"
-              className="h-20 w-full object-contain group-data-[collapsible=icon]:hidden"
-            />
-            <img
-              src="/logo.png"
-              alt="Sugar Plant SPT"
-              className="hidden size-7 object-contain group-data-[collapsible=icon]:block"
-            />
+          <div className="flex h-full w-full items-center gap-2 group-data-[collapsible=icon]:justify-center">
+            <Layers2 className="size-5 shrink-0 text-primary" />
+            <span className="text-base font-bold tracking-tight group-data-[collapsible=icon]:hidden">
+              TerrasyncCRM
+            </span>
           </div>
         </div>
       </SidebarHeader>
